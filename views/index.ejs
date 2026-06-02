@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= data.settings.buildingName %> – ממשק דיירים</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .apt-row-debt { color: var(--danger); font-weight: 700; }
+    .apt-row-ok   { color: var(--success); font-weight: 600; }
+    .project-status { display: flex; gap: 6px; flex-wrap: wrap; }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a href="/" class="header-brand">
+      <span class="logo">🏠</span>
+      <div>
+        <h1><%= data.settings.buildingName %></h1>
+        <p>ממשק דיירים</p>
+      </div>
+    </a>
+    <div class="header-actions">
+      <button class="btn btn-secondary btn-sm" id="logoutBtn" style="display:none" onclick="logout()">יציאה</button>
+      <a href="/admin" class="btn btn-ghost btn-sm">ממשק מנהל →</a>
+    </div>
+  </div>
+</header>
+
+<!-- LOGIN STATE -->
+<div id="loginSection" class="login-screen">
+  <div class="login-card">
+    <div class="login-icon">🔑</div>
+    <h2>כניסה לאזור האישי</h2>
+    <p>הזן את מספר דירתך וסיסמה אישית</p>
+    <div class="form-group">
+      <label class="form-label">מספר דירה</label>
+      <input type="number" id="loginApt" class="form-control" placeholder="לדוגמה: 5" min="1" max="20">
+    </div>
+    <div class="form-group">
+      <input type="password" id="loginPass" class="form-control" placeholder="סיסמה">
+    </div>
+    <div id="loginError" class="alert alert-danger" style="display:none">מספר דירה או סיסמה שגויים</div>
+    <button class="btn btn-primary w-full btn-lg" onclick="doLogin()">כניסה לאזור האישי</button>
+    <div class="divider"></div>
+    <p class="text-sm text-muted">ניתן לגלול למטה לצפייה בטבלת השקיפות הציבורית</p>
+  </div>
+</div>
+
+<!-- PERSONAL AREA (shown after login) -->
+<div id="personalSection" style="display:none">
+  <div class="container" style="padding-top:24px; padding-bottom:24px;">
+    <div class="personal-area">
+      <div class="flex-between" style="flex-wrap:wrap; gap:12px;">
+        <div>
+          <h2 id="welcomeText">שלום!</h2>
+          <p id="aptTypeText"></p>
+        </div>
+        <button class="btn" style="background:rgba(255,255,255,0.2);color:white;" onclick="logout()">🚪 יציאה</button>
+      </div>
+      <div class="balance-display">
+        <div>
+          <div style="font-size:0.8rem;color:rgba(255,255,255,0.75);margin-bottom:2px;">מצב חשבון</div>
+          <div class="amount" id="balanceAmount">₪0</div>
+        </div>
+        <div id="balanceStatus" style="font-size:0.85rem;color:rgba(255,255,255,0.85);"></div>
+      </div>
+    </div>
+
+    <!-- Note from committee -->
+    <div id="noteCard" class="card mb-2" style="display:none;">
+      <div class="card-title">💬 הודעה מהוועד</div>
+      <p id="noteText" style="margin-top:8px;"></p>
+    </div>
+
+    <!-- Payment info -->
+    <div class="card mb-2">
+      <div class="card-title mb-2">💳 תשלום דמי ועד</div>
+      <div class="pay-info-box">
+        <div>
+          <div class="text-sm text-muted mb-1">פרטי חשבון בנק</div>
+          <div id="bankDetailsText" style="font-weight:600;"><%= data.settings.bankDetails %></div>
+        </div>
+        <button class="copy-btn" onclick="copyText('<%= data.settings.bankDetails %>')">📋 העתק</button>
+      </div>
+      <% if (data.settings.payboxLink) { %>
+      <div class="mt-2" style="display:flex;gap:8px;flex-wrap:wrap;">
+        <a href="<%= data.settings.payboxLink %>" target="_blank" class="btn btn-warning">📱 תשלום בPaybox</a>
+        <button class="btn btn-secondary" onclick="copyText('<%= data.settings.payboxLink %>')">🔗 העתק קישור</button>
+      </div>
+      <% } %>
+    </div>
+
+    <!-- Monthly fee reminder -->
+    <div class="card mb-3">
+      <div class="card-title mb-2">📅 תשלום חודשי</div>
+      <div id="monthlyFeeInfo" class="text-sm text-muted"></div>
+    </div>
+  </div>
+</div>
+
+<!-- PUBLIC TRANSPARENCY TABLE -->
+<div class="container" style="padding-bottom:40px;">
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">📊 טבלת שקיפות כספית – כלל הדירות</div>
+    </div>
+    <div id="transparencyContent">
+      <div class="empty-state"><div class="empty-icon">⏳</div><p>טוען נתונים...</p></div>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script>
+const appData = <%- JSON.stringify(data) %>;
+let currentResident = null;
+
+// ── Auth ──────────────────────────────────────────────────────
+function doLogin() {
+  const aptNumber = document.getElementById('loginApt').value;
+  const password  = document.getElementById('loginPass').value;
+  fetch('/api/auth/resident', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ aptNumber, password })
+  }).then(r => r.json()).then(res => {
+    if (res.error) {
+      document.getElementById('loginError').style.display = 'flex';
+    } else {
+      localStorage.setItem('residentSession', JSON.stringify(res.resident));
+      showPersonalArea(res.resident);
+    }
+  }).catch(() => showToast('שגיאת תקשורת', 'error'));
+}
+
+function logout() {
+  localStorage.removeItem('residentSession');
+  currentResident = null;
+  document.getElementById('loginSection').style.display = 'flex';
+  document.getElementById('personalSection').style.display = 'none';
+  document.getElementById('logoutBtn').style.display = 'none';
+  document.getElementById('loginApt').value = '';
+  document.getElementById('loginPass').value = '';
+}
+
+function showPersonalArea(resident) {
+  currentResident = resident;
+  document.getElementById('loginSection').style.display = 'none';
+  document.getElementById('personalSection').style.display = 'block';
+  document.getElementById('logoutBtn').style.display = 'inline-flex';
+
+  document.getElementById('welcomeText').textContent = `שלום, ${resident.firstName} ${resident.lastName} (דירה ${resident.number})`;
+  const aptType = appData.settings.apartmentTypes.find(t => t.id === resident.typeId);
+  document.getElementById('aptTypeText').textContent = aptType ? `${aptType.name} | דמי ועד: ₪${aptType.monthlyFee}/חודש` : '';
+  document.getElementById('monthlyFeeInfo').textContent = aptType ? `דמי הוועד החודשיים לדירתך: ₪${aptType.monthlyFee}` : '';
+
+  // Calculate balance
+  const balance = calcResidentBalance(resident);
+  const el = document.getElementById('balanceAmount');
+  const statusEl = document.getElementById('balanceStatus');
+  el.textContent = `₪${Math.abs(balance).toLocaleString()}`;
+  if (balance < 0) {
+    el.className = 'amount debt';
+    statusEl.textContent = '⚠️ יתרת חוב – יש לשלם';
+  } else if (balance > 0) {
+    el.className = 'amount ok';
+    statusEl.textContent = '✅ שילמת מראש';
+  } else {
+    el.className = 'amount ok';
+    statusEl.textContent = '✅ מעודכן';
+  }
+
+  if (resident.note) {
+    document.getElementById('noteCard').style.display = 'block';
+    document.getElementById('noteText').textContent = resident.note;
+  }
+}
+
+function calcResidentBalance(resident) {
+  const aptType = appData.settings.apartmentTypes.find(t => t.id === resident.typeId);
+  const monthly = aptType ? aptType.monthlyFee : 0;
+
+  // Find all regular income transactions for this apartment
+  const income = appData.transactions
+    .filter(t => String(t.aptNumber) === String(resident.number) && t.type === 'income' && !t.canceled)
+    .reduce((s, t) => s + Number(t.amount), 0);
+
+  // Deferred checks received
+  const deferred = appData.deferredChecks
+    .filter(d => String(d.aptNumber) === String(resident.number) && d.cashed)
+    .reduce((s, d) => s + Number(d.amount), 0);
+
+  // Months owed: from entry date to now
+  const entry = new Date(resident.entryDate || '2020-01-01');
+  const now = new Date();
+  const months = (now.getFullYear() - entry.getFullYear()) * 12 + (now.getMonth() - entry.getMonth()) + 1;
+  const totalOwed = months * monthly;
+
+  // Paid = income + deferred cashed
+  const totalPaid = income + deferred;
+  return totalPaid - totalOwed;
+}
+
+// ── Transparency Table ─────────────────────────────────────────
+function buildTransparencyTable() {
+  const container = document.getElementById('transparencyContent');
+  const residents = appData.residents.sort((a,b) => a.number - b.number);
+  const projects = appData.oneTimeProjects;
+
+  if (!residents.length) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-icon">🏠</div><p>אין דיירים רשומים</p></div>';
+    return;
+  }
+
+  let html = '<div class="table-wrap"><table><thead><tr>';
+  html += '<th>דירה</th><th>מצב חשבון שוטף</th>';
+  projects.forEach(p => { html += `<th>${p.name}</th>`; });
+  html += '</tr></thead><tbody>';
+
+  residents.forEach(r => {
+    const balance = calcResidentBalance(r);
+    const balClass = balance < 0 ? 'apt-row-debt' : 'apt-row-ok';
+    const balText = balance < 0 ? `חוב: ₪${Math.abs(balance).toLocaleString()}` : balance === 0 ? '✅ מעודכן' : `✅ ₪${balance.toLocaleString()} זכות`;
+
+    html += `<tr><td><strong>דירה ${r.number}</strong></td><td class="${balClass}">${balText}</td>`;
+    projects.forEach(p => {
+      const paid = p.paidStatus && p.paidStatus[r.id];
+      html += `<td><span class="badge ${paid ? 'badge-success' : 'badge-danger'}">${paid ? '✅ שילם' : '❌ לא שילם'}</span></td>`;
+    });
+    html += '</tr>';
+  });
+
+  html += '</tbody></table></div>';
+  container.innerHTML = html;
+}
+
+// ── Utils ─────────────────────────────────────────────────────
+function copyText(text) {
+  navigator.clipboard.writeText(text).then(() => showToast('הועתק ללוח!', 'success'));
+}
+
+function showToast(msg, type = 'success') {
+  const c = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = `toast toast-${type}`;
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 3100);
+}
+
+document.getElementById('loginApt').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('loginPass').focus(); });
+document.getElementById('loginPass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+
+// Auto-login from localStorage
+const saved = localStorage.getItem('residentSession');
+if (saved) {
+  try {
+    const r = JSON.parse(saved);
+    // Re-verify against current data
+    const found = appData.residents.find(res => res.id === r.id && res.password === r.password);
+    if (found) showPersonalArea(found);
+  } catch(e) { localStorage.removeItem('residentSession'); }
+}
+
+buildTransparencyTable();
+</script>
+</body>
+</html>

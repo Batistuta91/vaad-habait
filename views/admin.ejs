@@ -1,0 +1,1492 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ממשק מנהל – <%= data.settings.buildingName %></title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a href="/" class="header-brand">
+      <span class="logo">⚙️</span>
+      <div>
+        <h1><%= data.settings.buildingName %></h1>
+        <p>ממשק ניהול מנהל</p>
+      </div>
+    </a>
+    <div class="header-actions">
+      <button class="btn btn-secondary btn-sm" id="adminLogoutBtn" style="display:none" onclick="adminLogout()">יציאה</button>
+      <a href="/" class="btn btn-ghost btn-sm">← ממשק דיירים</a>
+    </div>
+  </div>
+</header>
+
+<!-- ADMIN LOGIN -->
+<div id="adminLoginSection" class="login-screen">
+  <div class="login-card">
+    <div class="login-icon">🔐</div>
+    <h2>כניסת מנהל</h2>
+    <p>הזן סיסמת מנהל לגישה לפאנל הניהול</p>
+    <div class="form-group">
+      <input type="password" id="adminPassInput" class="form-control" placeholder="סיסמת מנהל" autofocus>
+    </div>
+    <div id="adminLoginError" class="alert alert-danger" style="display:none">סיסמה שגויה</div>
+    <button class="btn btn-primary w-full btn-lg" onclick="doAdminLogin()">כניסה</button>
+    <p class="text-sm text-muted mt-2">סיסמת ברירת מחדל: admin123</p>
+  </div>
+</div>
+
+<!-- ADMIN PANEL -->
+<div id="adminPanel" style="display:none;">
+  <!-- Mobile tab nav -->
+  <div class="mobile-tab-nav" id="mobileSideNav">
+    <button class="tab-btn active" onclick="showAdminSection('dashboard', this)">📊 דשבורד</button>
+    <button class="tab-btn" onclick="showAdminSection('residents', this)">🏠 דיירים</button>
+    <button class="tab-btn" onclick="showAdminSection('transactions', this)">💰 גבייה</button>
+    <button class="tab-btn" onclick="showAdminSection('deferred', this)">📅 צ׳קים</button>
+    <button class="tab-btn" onclick="showAdminSection('projects', this)">🎯 פרויקטים</button>
+    <button class="tab-btn" onclick="showAdminSection('expenses', this)">💸 הוצאות</button>
+    <button class="tab-btn" onclick="showAdminSection('services', this)">🔧 ספקים</button>
+    <button class="tab-btn" onclick="showAdminSection('settings', this)">⚙️ הגדרות</button>
+  </div>
+
+  <div class="admin-layout">
+    <!-- Sidebar -->
+    <div class="admin-sidebar" id="desktopSidebar">
+      <div class="sidebar-nav">
+        <div class="sidebar-group-title">ראשי</div>
+        <button class="sidebar-item active" onclick="showAdminSection('dashboard', this)"><span class="sidebar-icon">📊</span> דשבורד</button>
+
+        <div class="sidebar-group-title">ניהול</div>
+        <button class="sidebar-item" onclick="showAdminSection('residents', this)"><span class="sidebar-icon">🏠</span> דיירים</button>
+        <button class="sidebar-item" onclick="showAdminSection('transactions', this)"><span class="sidebar-icon">💰</span> גבייה שוטפת</button>
+        <button class="sidebar-item" onclick="showAdminSection('deferred', this)"><span class="sidebar-icon">📅</span> המחאות דחויות</button>
+        <button class="sidebar-item" onclick="showAdminSection('projects', this)"><span class="sidebar-icon">🎯</span> גבייה חד-פעמית</button>
+        <button class="sidebar-item" onclick="showAdminSection('expenses', this)"><span class="sidebar-icon">💸</span> הוצאות</button>
+        <button class="sidebar-item" onclick="showAdminSection('services', this)"><span class="sidebar-icon">🔧</span> ספקים ועסקאות</button>
+
+        <div class="sidebar-group-title">מערכת</div>
+        <button class="sidebar-item" onclick="showAdminSection('balance', this)"><span class="sidebar-icon">🏦</span> יתרת פתיחה</button>
+        <button class="sidebar-item" onclick="showAdminSection('settings', this)"><span class="sidebar-icon">⚙️</span> הגדרות</button>
+        <div class="sidebar-group-title">ייצוא</div>
+        <button class="sidebar-item" onclick="exportData('transactions')"><span class="sidebar-icon">📥</span> ייצוא תנועות</button>
+        <button class="sidebar-item" onclick="exportData('residents')"><span class="sidebar-icon">📥</span> ייצוא דיירים</button>
+      </div>
+    </div>
+
+    <!-- Main content -->
+    <div class="admin-content" id="adminContent">
+      <!-- Dashboard -->
+      <div id="sec-dashboard" class="admin-section">
+        <h2 class="mb-3">📊 דשבורד ראשי</h2>
+        <div id="dashboardContent"></div>
+      </div>
+
+      <!-- Residents -->
+      <div id="sec-residents" class="admin-section hidden">
+        <div class="flex-between mb-3" style="flex-wrap:wrap;gap:12px;">
+          <h2>🏠 ניהול דיירים</h2>
+          <button class="btn btn-primary" onclick="openResidentModal()">+ הוסף דייר</button>
+        </div>
+        <div id="residentsContent"></div>
+      </div>
+
+      <!-- Transactions -->
+      <div id="sec-transactions" class="admin-section hidden">
+        <div class="flex-between mb-3" style="flex-wrap:wrap;gap:12px;">
+          <h2>💰 גבייה שוטפת</h2>
+          <button class="btn btn-primary" onclick="openTransactionModal()">+ רשום תשלום</button>
+        </div>
+        <div id="transactionsContent"></div>
+      </div>
+
+      <!-- Deferred Checks -->
+      <div id="sec-deferred" class="admin-section hidden">
+        <div class="flex-between mb-3" style="flex-wrap:wrap;gap:12px;">
+          <h2>📅 המחאות דחויות</h2>
+          <button class="btn btn-primary" onclick="openDeferredModal()">+ הוסף המחאה</button>
+        </div>
+        <div id="deferredContent"></div>
+      </div>
+
+      <!-- One-time projects -->
+      <div id="sec-projects" class="admin-section hidden">
+        <div class="flex-between mb-3" style="flex-wrap:wrap;gap:12px;">
+          <h2>🎯 גבייה חד-פעמית</h2>
+          <button class="btn btn-primary" onclick="openProjectModal()">+ פרויקט חדש</button>
+        </div>
+        <div id="projectsContent"></div>
+      </div>
+
+      <!-- Expenses -->
+      <div id="sec-expenses" class="admin-section hidden">
+        <div class="flex-between mb-3" style="flex-wrap:wrap;gap:12px;">
+          <h2>💸 הוצאות</h2>
+          <button class="btn btn-primary" onclick="openExpenseModal()">+ הוצאה חדשה</button>
+        </div>
+        <div id="expensesContent"></div>
+      </div>
+
+      <!-- Services -->
+      <div id="sec-services" class="admin-section hidden">
+        <div class="flex-between mb-3" style="flex-wrap:wrap;gap:12px;">
+          <h2>🔧 ספקים ועסקאות שירות</h2>
+          <button class="btn btn-primary" onclick="openServiceModal()">+ עסקת שירות</button>
+        </div>
+        <div id="servicesContent"></div>
+      </div>
+
+      <!-- Balance -->
+      <div id="sec-balance" class="admin-section hidden">
+        <h2 class="mb-3">🏦 יתרת פתיחה והכנסות חוץ</h2>
+        <div id="balanceContent"></div>
+      </div>
+
+      <!-- Settings -->
+      <div id="sec-settings" class="admin-section hidden">
+        <h2 class="mb-3">⚙️ הגדרות מערכת</h2>
+        <div id="settingsContent"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== MODALS ========== -->
+
+<!-- Resident Modal -->
+<div class="modal-overlay" id="residentModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="residentModalTitle">הוספת דייר</div>
+      <button class="modal-close" onclick="closeModal('residentModal')">✕</button>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">מספר דירה</label><input type="number" id="rNumber" class="form-control" min="1" max="99"></div>
+      <div class="form-group">
+        <label class="form-label">סוג דירה</label>
+        <select id="rTypeId" class="form-control"></select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">שם משפחה</label><input id="rLastName" class="form-control" type="text"></div>
+      <div class="form-group"><label class="form-label">שם פרטי</label><input id="rFirstName" class="form-control" type="text"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">טלפון</label><input id="rPhone" class="form-control" type="tel"></div>
+      <div class="form-group"><label class="form-label">תאריך כניסה</label><input id="rEntryDate" class="form-control" type="date"></div>
+    </div>
+    <div class="form-group"><label class="form-label">סיסמת גישה לדייר</label><input id="rPassword" class="form-control" type="text" placeholder="לדוגמה: 1234"></div>
+    <div class="form-group">
+      <div class="toggle-wrap">
+        <label class="toggle"><input type="checkbox" id="rIsRental" onchange="toggleRentalFields()"><span class="toggle-slider"></span></label>
+        <label class="form-label" style="margin-bottom:0">דירה בשכירות</label>
+      </div>
+    </div>
+    <div id="rentalFields" style="display:none">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">שם בעל הנכס</label><input id="rOwnerName" class="form-control" type="text"></div>
+        <div class="form-group"><label class="form-label">טלפון בעל הנכס</label><input id="rOwnerPhone" class="form-control" type="tel"></div>
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label">הערה לדייר</label><textarea id="rNote" class="form-control" rows="2" placeholder="הודעה אישית שתופיע באזור האישי של הדייר"></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="saveResident()">שמור</button>
+      <button class="btn btn-secondary" onclick="closeModal('residentModal')">ביטול</button>
+    </div>
+  </div>
+</div>
+
+<!-- Transaction Modal -->
+<div class="modal-overlay" id="transactionModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">רישום תשלום</div>
+      <button class="modal-close" onclick="closeModal('transactionModal')">✕</button>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">דירה</label>
+        <select id="tAptId" class="form-control" onchange="autoFillAmount()"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">אמצעי תשלום</label>
+        <select id="tMethod" class="form-control">
+          <option value="cash">מזומן</option>
+          <option value="check">צ'ק שוטף</option>
+          <option value="transfer">העברה</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">סכום (₪)</label><input id="tAmount" class="form-control" type="number" min="0"></div>
+      <div class="form-group">
+        <label class="form-label">מספר חודשים לתשלום</label>
+        <input id="tMonths" class="form-control" type="number" min="1" max="24" value="1" onchange="updateMultiMonth()">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">חודש תחילה</label>
+        <select id="tMonth" class="form-control"></select>
+      </div>
+      <div class="form-group"><label class="form-label">שנה</label><input id="tYear" class="form-control" type="number" min="2020" max="2030"></div>
+    </div>
+    <div class="form-group"><label class="form-label">פירוט (אופציונלי)</label><input id="tNote" class="form-control" type="text" placeholder="לדוגמה: חודשים ינואר-מרץ 2024"></div>
+    <div id="multiMonthPreview" class="alert alert-info" style="display:none;margin-top:8px;"></div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="saveTransaction()">שמור ✓</button>
+      <button class="btn btn-success" onclick="saveAndPrintReceipt()">שמור + קבלה 🖨️</button>
+      <button class="btn btn-secondary" onclick="closeModal('transactionModal')">ביטול</button>
+    </div>
+  </div>
+</div>
+
+<!-- Deferred Check Modal -->
+<div class="modal-overlay" id="deferredModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">הוספת המחאה דחויה</div>
+      <button class="modal-close" onclick="closeModal('deferredModal')">✕</button>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">דירה</label>
+        <select id="dAptId" class="form-control" onchange="autoFillDeferred()"></select>
+      </div>
+      <div class="form-group"><label class="form-label">מספר המחאה</label><input id="dCheckNum" class="form-control" type="text"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">סכום כל המחאה (₪)</label><input id="dAmount" class="form-control" type="number" min="0"></div>
+      <div class="form-group">
+        <label class="form-label">כמה חודשים?</label>
+        <input id="dNumMonths" class="form-control" type="number" min="1" max="24" value="1" onchange="buildDeferredPreview()">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">חודש פירעון ראשון</label>
+        <select id="dStartMonth" class="form-control" onchange="buildDeferredPreview()"></select>
+      </div>
+      <div class="form-group"><label class="form-label">שנה</label><input id="dStartYear" class="form-control" type="number" min="2024" max="2030" onchange="buildDeferredPreview()"></div>
+    </div>
+    <div id="deferredPreview" class="alert alert-info" style="display:none;margin-top:8px;"></div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="saveDeferred()">שמור</button>
+      <button class="btn btn-secondary" onclick="closeModal('deferredModal')">ביטול</button>
+    </div>
+  </div>
+</div>
+
+<!-- Project Modal -->
+<div class="modal-overlay" id="projectModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">פרויקט גבייה חד-פעמית</div>
+      <button class="modal-close" onclick="closeModal('projectModal')">✕</button>
+    </div>
+    <div class="form-group"><label class="form-label">שם הפרויקט</label><input id="pName" class="form-control" type="text" placeholder="לדוגמה: זיפות גג 2024"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">סכום לדירה (₪)</label><input id="pAmount" class="form-control" type="number" min="0"></div>
+      <div class="form-group"><label class="form-label">תאריך יעד</label><input id="pDueDate" class="form-control" type="date"></div>
+    </div>
+    <div class="form-group"><label class="form-label">פירוט</label><textarea id="pNote" class="form-control" rows="2"></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="saveProject()">צור פרויקט</button>
+      <button class="btn btn-secondary" onclick="closeModal('projectModal')">ביטול</button>
+    </div>
+  </div>
+</div>
+
+<!-- Expense Modal -->
+<div class="modal-overlay" id="expenseModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">הוצאה חדשה</div>
+      <button class="modal-close" onclick="closeModal('expenseModal')">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">עסקת שירות (ספק)</label>
+      <select id="eServiceId" class="form-control">
+        <option value="">-- ללא ספק ספציפי --</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">סכום (₪)</label><input id="eAmount" class="form-control" type="number" min="0"></div>
+      <div class="form-group">
+        <label class="form-label">חודש</label>
+        <select id="eMonth" class="form-control"></select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">שנה</label><input id="eYear" class="form-control" type="number" min="2020" max="2030"></div>
+      <div class="form-group">
+        <label class="form-label">אמצעי תשלום</label>
+        <select id="eMethod" class="form-control">
+          <option value="transfer">העברה</option>
+          <option value="cash">מזומן</option>
+          <option value="check">צ'ק</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label">פירוט</label><input id="eNote" class="form-control" type="text" placeholder="פירוט ההוצאה"></div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="saveExpense()">שמור</button>
+      <button class="btn btn-secondary" onclick="closeModal('expenseModal')">ביטול</button>
+    </div>
+  </div>
+</div>
+
+<!-- Service Transaction Modal -->
+<div class="modal-overlay" id="serviceModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="serviceModalTitle">עסקת שירות חדשה</div>
+      <button class="modal-close" onclick="closeModal('serviceModal')">✕</button>
+    </div>
+    <div class="form-group"><label class="form-label">שם העסקה</label><input id="svName" class="form-control" type="text" placeholder="לדוגמה: אחזקה שנתית – מעלית"></div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">מקצוע</label>
+        <select id="svProfession" class="form-control"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">מצב עבודה</label>
+        <select id="svStatus" class="form-control"></select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">טלפון ספק</label><input id="svPhone" class="form-control" type="tel"></div>
+      <div class="form-group"><label class="form-label">עלות כוללת (₪)</label><input id="svTotalCost" class="form-control" type="number" min="0"></div>
+    </div>
+    <div class="form-group">
+      <div class="toggle-wrap">
+        <label class="toggle"><input type="checkbox" id="svIsRetainer"><span class="toggle-slider"></span></label>
+        <label class="form-label" style="margin-bottom:0">שירות קבוע (ריטיינר)</label>
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label">הערות</label><textarea id="svNote" class="form-control" rows="2"></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="saveService()">שמור</button>
+      <button class="btn btn-secondary" onclick="closeModal('serviceModal')">ביטול</button>
+    </div>
+  </div>
+</div>
+
+<!-- Receipt Modal -->
+<div class="modal-overlay" id="receiptModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">🧾 קבלה דיגיטלית</div>
+      <button class="modal-close" onclick="closeModal('receiptModal')">✕</button>
+    </div>
+    <div id="receiptContent"></div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="window.print()">🖨️ הדפסה</button>
+      <button class="btn btn-secondary" onclick="closeModal('receiptModal')">סגור</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════════
+let appData = <%- JSON.stringify(data) %>;
+let editingId = null;
+const MONTHS = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+const nowDate = new Date();
+
+// ═══════════════════════════════════════════════════════════════
+//  AUTH
+// ═══════════════════════════════════════════════════════════════
+function doAdminLogin() {
+  const pw = document.getElementById('adminPassInput').value;
+  fetch('/api/auth/admin', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ password: pw })
+  }).then(r => r.json()).then(res => {
+    if (res.error) { document.getElementById('adminLoginError').style.display = 'flex'; return; }
+    localStorage.setItem('adminSession', '1');
+    document.getElementById('adminLoginSection').style.display = 'none';
+    document.getElementById('adminPanel').style.display = 'block';
+    document.getElementById('adminLogoutBtn').style.display = 'inline-flex';
+    initAdmin();
+  });
+}
+
+function adminLogout() {
+  localStorage.removeItem('adminSession');
+  location.reload();
+}
+
+document.getElementById('adminPassInput').addEventListener('keydown', e => { if(e.key==='Enter') doAdminLogin(); });
+
+if (localStorage.getItem('adminSession')) {
+  document.getElementById('adminLoginSection').style.display = 'none';
+  document.getElementById('adminPanel').style.display = 'block';
+  document.getElementById('adminLogoutBtn').style.display = 'inline-flex';
+  initAdmin();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════════
+function initAdmin() {
+  populateMonthSelects();
+  renderDashboard();
+  renderResidents();
+  renderTransactions();
+  renderDeferred();
+  renderProjects();
+  renderExpenses();
+  renderServices();
+  renderBalance();
+  renderSettings();
+}
+
+async function refreshData() {
+  const res = await fetch('/api/data');
+  appData = await res.json();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════════════════════════
+function showAdminSection(name, btn) {
+  document.querySelectorAll('.admin-section').forEach(s => s.classList.add('hidden'));
+  document.querySelectorAll('.sidebar-item, .mobile-tab-nav .tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(`sec-${name}`).classList.remove('hidden');
+  if (btn) btn.classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  DASHBOARD
+// ═══════════════════════════════════════════════════════════════
+function renderDashboard() {
+  const totalIncome = appData.transactions
+    .filter(t => t.type === 'income' && !t.canceled)
+    .reduce((s, t) => s + Number(t.amount), 0);
+
+  const totalExpenses = appData.transactions
+    .filter(t => t.type === 'expense' && !t.canceled)
+    .reduce((s, t) => s + Number(t.amount), 0);
+
+  const deferredPending = appData.deferredChecks
+    .filter(d => !d.cashed)
+    .reduce((s, d) => s + Number(d.amount), 0);
+
+  const openBank = Number(appData.openingBalance?.bank || 0);
+  const openCash = Number(appData.openingBalance?.cash || 0);
+  const extIncome = appData.externalIncome.reduce((s, x) => s + Number(x.amount), 0);
+
+  const totalFund = openBank + openCash + totalIncome + extIncome - totalExpenses;
+
+  // Debt residents
+  const debtors = appData.residents.filter(r => {
+    const balance = calcResidentBalance(r);
+    return balance < 0;
+  });
+
+  const upcomingChecks = appData.deferredChecks
+    .filter(d => !d.cashed)
+    .sort((a,b) => new Date(a.dueDate) - new Date(b.dueDate))
+    .slice(0, 5);
+
+  let html = `
+  <div class="grid grid-4 mb-3" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr))">
+    <div class="stat-card">
+      <div class="stat-label">💰 יתרה כוללת בקופה</div>
+      <div class="stat-value ${totalFund < 0 ? 'danger' : 'success'}">₪${Math.abs(totalFund).toLocaleString()}</div>
+      <div class="stat-sub">${totalFund < 0 ? 'גירעון!' : 'יתרה חיובית'}</div>
+    </div>
+    <div class="stat-card warning">
+      <div class="stat-label">📅 צ׳קים דחויים ממתינים</div>
+      <div class="stat-value">₪${deferredPending.toLocaleString()}</div>
+      <div class="stat-sub">${appData.deferredChecks.filter(d=>!d.cashed).length} המחאות</div>
+    </div>
+    <div class="stat-card danger">
+      <div class="stat-label">⚠️ דיירים עם חוב</div>
+      <div class="stat-value danger">${debtors.length}</div>
+      <div class="stat-sub">מתוך ${appData.residents.length} דירות</div>
+    </div>
+    <div class="stat-card gold">
+      <div class="stat-label">💸 סה"כ הוצאות</div>
+      <div class="stat-value">₪${totalExpenses.toLocaleString()}</div>
+      <div class="stat-sub">מתוך גבייה: ₪${totalIncome.toLocaleString()}</div>
+    </div>
+  </div>
+
+  <div class="grid grid-2">
+    <div class="card">
+      <div class="card-header"><div class="card-title">⚠️ דיירים עם חוב</div></div>`;
+
+  if (debtors.length === 0) {
+    html += '<div class="alert alert-success">✅ כל הדיירים מעודכנים!</div>';
+  } else {
+    html += '<div class="table-wrap"><table><thead><tr><th>דירה</th><th>שם</th><th>חוב</th></tr></thead><tbody>';
+    debtors.forEach(r => {
+      const bal = calcResidentBalance(r);
+      html += `<tr><td><strong>דירה ${r.number}</strong></td><td>${r.lastName} ${r.firstName}</td><td class="text-danger text-bold">₪${Math.abs(bal).toLocaleString()}</td></tr>`;
+    });
+    html += '</tbody></table></div>';
+  }
+
+  html += `</div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">📅 צ׳קים קרובים לפירעון</div></div>`;
+
+  if (upcomingChecks.length === 0) {
+    html += '<div class="empty-state" style="padding:24px"><p>אין צ׳קים ממתינים</p></div>';
+  } else {
+    html += '<div class="table-wrap"><table><thead><tr><th>דירה</th><th>סכום</th><th>תאריך פירעון</th></tr></thead><tbody>';
+    upcomingChecks.forEach(d => {
+      const r = appData.residents.find(r => String(r.number) === String(d.aptNumber));
+      const dueSoon = new Date(d.dueDate) <= new Date(Date.now() + 30*24*60*60*1000);
+      html += `<tr><td>דירה ${d.aptNumber}</td><td>₪${Number(d.amount).toLocaleString()}</td>
+        <td class="${dueSoon ? 'text-warning text-bold' : ''}">${formatDate(d.dueDate)}</td></tr>`;
+    });
+    html += '</tbody></table></div>';
+  }
+
+  html += `</div></div>`;
+  document.getElementById('dashboardContent').innerHTML = html;
+}
+
+function calcResidentBalance(resident) {
+  const aptType = appData.settings.apartmentTypes.find(t => t.id === resident.typeId);
+  const monthly = aptType ? Number(aptType.monthlyFee) : 0;
+  const income = appData.transactions
+    .filter(t => String(t.aptNumber) === String(resident.number) && t.type === 'income' && !t.canceled)
+    .reduce((s, t) => s + Number(t.amount), 0);
+  const deferred = appData.deferredChecks
+    .filter(d => String(d.aptNumber) === String(resident.number) && d.cashed)
+    .reduce((s, d) => s + Number(d.amount), 0);
+  const entry = new Date(resident.entryDate || '2020-01-01');
+  const now = new Date();
+  const months = (now.getFullYear() - entry.getFullYear()) * 12 + (now.getMonth() - entry.getMonth()) + 1;
+  return (income + deferred) - (months * monthly);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  RESIDENTS
+// ═══════════════════════════════════════════════════════════════
+function renderResidents() {
+  const residents = [...appData.residents].sort((a,b) => a.number - b.number);
+  let html = '<div class="table-wrap"><table><thead><tr><th>דירה</th><th>שם</th><th>טלפון</th><th>סוג</th><th>כניסה</th><th>שכירות</th><th>מצב</th><th>פעולות</th></tr></thead><tbody>';
+  residents.forEach(r => {
+    const type = appData.settings.apartmentTypes.find(t => t.id === r.typeId);
+    const bal = calcResidentBalance(r);
+    html += `<tr>
+      <td><strong>דירה ${r.number}</strong></td>
+      <td>${r.lastName} ${r.firstName}</td>
+      <td dir="ltr">${r.phone}</td>
+      <td>${type ? type.name : '-'}</td>
+      <td>${formatDate(r.entryDate)}</td>
+      <td>${r.isRental ? `<span class="badge badge-warning">שכירות</span>` : `<span class="badge badge-neutral">בעלים</span>`}</td>
+      <td class="${bal < 0 ? 'text-danger' : 'text-success'} text-bold">${bal < 0 ? '−₪'+Math.abs(bal).toLocaleString() : '+₪'+Math.abs(bal).toLocaleString()}</td>
+      <td>
+        <div class="flex gap-1">
+          <button class="btn-icon" title="עריכה" onclick="openResidentModal('${r.id}')">✏️</button>
+          <button class="btn-icon" title="מחיקה" onclick="deleteResident('${r.id}')">🗑️</button>
+        </div>
+      </td>
+    </tr>`;
+  });
+  html += '</tbody></table></div>';
+  document.getElementById('residentsContent').innerHTML = html;
+}
+
+function openResidentModal(id) {
+  editingId = id || null;
+  const modal = document.getElementById('residentModal');
+  document.getElementById('residentModalTitle').textContent = id ? 'עריכת דייר' : 'הוספת דייר';
+
+  // Populate type select
+  const sel = document.getElementById('rTypeId');
+  sel.innerHTML = appData.settings.apartmentTypes.map(t => `<option value="${t.id}">${t.name} – ₪${t.monthlyFee}/חודש</option>`).join('');
+
+  if (id) {
+    const r = appData.residents.find(x => x.id === id);
+    document.getElementById('rNumber').value = r.number;
+    document.getElementById('rTypeId').value = r.typeId;
+    document.getElementById('rLastName').value = r.lastName;
+    document.getElementById('rFirstName').value = r.firstName;
+    document.getElementById('rPhone').value = r.phone;
+    document.getElementById('rEntryDate').value = r.entryDate;
+    document.getElementById('rPassword').value = r.password;
+    document.getElementById('rIsRental').checked = r.isRental;
+    document.getElementById('rOwnerName').value = r.ownerName || '';
+    document.getElementById('rOwnerPhone').value = r.ownerPhone || '';
+    document.getElementById('rNote').value = r.note || '';
+    toggleRentalFields();
+  } else {
+    document.getElementById('rNumber').value = '';
+    document.getElementById('rLastName').value = '';
+    document.getElementById('rFirstName').value = '';
+    document.getElementById('rPhone').value = '';
+    document.getElementById('rEntryDate').value = nowDate.toISOString().slice(0,10);
+    document.getElementById('rPassword').value = '1234';
+    document.getElementById('rIsRental').checked = false;
+    document.getElementById('rOwnerName').value = '';
+    document.getElementById('rOwnerPhone').value = '';
+    document.getElementById('rNote').value = '';
+    document.getElementById('rentalFields').style.display = 'none';
+  }
+  openModal('residentModal');
+}
+
+function toggleRentalFields() {
+  document.getElementById('rentalFields').style.display =
+    document.getElementById('rIsRental').checked ? 'block' : 'none';
+}
+
+async function saveResident() {
+  const body = {
+    number: Number(document.getElementById('rNumber').value),
+    typeId: document.getElementById('rTypeId').value,
+    lastName: document.getElementById('rLastName').value,
+    firstName: document.getElementById('rFirstName').value,
+    phone: document.getElementById('rPhone').value,
+    entryDate: document.getElementById('rEntryDate').value,
+    password: document.getElementById('rPassword').value,
+    isRental: document.getElementById('rIsRental').checked,
+    ownerName: document.getElementById('rOwnerName').value,
+    ownerPhone: document.getElementById('rOwnerPhone').value,
+    note: document.getElementById('rNote').value,
+  };
+  const url = editingId ? `/api/residents/${editingId}` : '/api/residents';
+  const method = editingId ? 'PUT' : 'POST';
+  const res = await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  if (res.ok) {
+    await refreshData();
+    renderResidents();
+    renderDashboard();
+    closeModal('residentModal');
+    showToast(editingId ? 'הדייר עודכן' : 'הדייר נוסף', 'success');
+  }
+}
+
+async function deleteResident(id) {
+  if (!confirm('למחוק דייר זה?')) return;
+  await fetch(`/api/residents/${id}`, { method: 'DELETE' });
+  await refreshData();
+  renderResidents();
+  renderDashboard();
+  showToast('הדייר נמחק', 'success');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  TRANSACTIONS
+// ═══════════════════════════════════════════════════════════════
+function renderTransactions() {
+  const txns = [...appData.transactions].sort((a,b) => {
+    const da = new Date(a.year, (a.month||1)-1);
+    const db = new Date(b.year, (b.month||1)-1);
+    return db - da;
+  });
+
+  let html = '<div class="table-wrap"><table><thead><tr><th>דירה</th><th>חודש/שנה</th><th>סכום</th><th>סוג</th><th>אמצעי</th><th>פירוט</th><th>סטטוס</th><th>פעולות</th></tr></thead><tbody>';
+  if (!txns.length) { document.getElementById('transactionsContent').innerHTML = '<div class="empty-state"><div class="empty-icon">💰</div><p>אין תנועות כספיות</p></div>'; return; }
+
+  txns.forEach(t => {
+    const isIncome = t.type === 'income';
+    html += `<tr class="${t.canceled ? 'canceled' : ''}">
+      <td>דירה ${t.aptNumber}</td>
+      <td>${MONTHS[(t.month||1)-1]} ${t.year}</td>
+      <td class="${isIncome ? 'text-success' : 'text-danger'} text-bold">${isIncome ? '+' : '-'}₪${Number(t.amount).toLocaleString()}</td>
+      <td>${isIncome ? '💰 הכנסה' : '💸 הוצאה'}</td>
+      <td>${methodName(t.method)}</td>
+      <td class="text-sm text-muted">${t.note || ''}</td>
+      <td>${t.canceled ? `<span class="badge badge-danger">בוטל – ${t.cancelReason || ''}</span>` : `<span class="badge badge-success">תקין</span>`}</td>
+      <td>
+        <div class="flex gap-1">
+          ${!t.canceled && t.type === 'income' ? `<button class="btn-icon" title="ביטול (צ׳ק חזר)" onclick="cancelTransaction('${t.id}')">🚫</button>` : ''}
+          <button class="btn-icon" title="הפקת קבלה" onclick="showReceipt('${t.id}')">🧾</button>
+          <button class="btn-icon" title="מחיקה" onclick="deleteTransaction('${t.id}')">🗑️</button>
+        </div>
+      </td>
+    </tr>`;
+  });
+  html += '</tbody></table></div>';
+  document.getElementById('transactionsContent').innerHTML = html;
+}
+
+function openTransactionModal() {
+  editingId = null;
+  const sel = document.getElementById('tAptId');
+  sel.innerHTML = [...appData.residents].sort((a,b)=>a.number-b.number)
+    .map(r => `<option value="${r.number}">${r.number} – ${r.lastName} ${r.firstName}</option>`).join('');
+  document.getElementById('tMonth').value = String(nowDate.getMonth() + 1);
+  document.getElementById('tYear').value = nowDate.getFullYear();
+  document.getElementById('tMonths').value = 1;
+  document.getElementById('tNote').value = '';
+  document.getElementById('multiMonthPreview').style.display = 'none';
+  autoFillAmount();
+  openModal('transactionModal');
+}
+
+function autoFillAmount() {
+  const aptNum = document.getElementById('tAptId').value;
+  const r = appData.residents.find(x => String(x.number) === String(aptNum));
+  if (r) {
+    const type = appData.settings.apartmentTypes.find(t => t.id === r.typeId);
+    if (type) document.getElementById('tAmount').value = type.monthlyFee;
+  }
+}
+
+function updateMultiMonth() {
+  const months = parseInt(document.getElementById('tMonths').value) || 1;
+  const startMonth = parseInt(document.getElementById('tMonth').value);
+  const startYear = parseInt(document.getElementById('tYear').value);
+  const amount = Number(document.getElementById('tAmount').value);
+  if (months > 1) {
+    let preview = `תשלום ל-${months} חודשים | סה"כ: ₪${(months*amount).toLocaleString()}<br>`;
+    for (let i = 0; i < months; i++) {
+      const d = new Date(startYear, startMonth - 1 + i);
+      preview += `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+      if (i < months-1) preview += ', ';
+    }
+    const el = document.getElementById('multiMonthPreview');
+    el.innerHTML = preview; el.style.display = 'flex';
+  } else {
+    document.getElementById('multiMonthPreview').style.display = 'none';
+  }
+}
+
+async function saveTransaction(andPrint = false) {
+  const aptNumber = document.getElementById('tAptId').value;
+  const amount = Number(document.getElementById('tAmount').value);
+  const numMonths = parseInt(document.getElementById('tMonths').value) || 1;
+  const startMonth = parseInt(document.getElementById('tMonth').value);
+  const startYear = parseInt(document.getElementById('tYear').value);
+  const method = document.getElementById('tMethod').value;
+  const note = document.getElementById('tNote').value;
+
+  let months = [];
+  for (let i = 0; i < numMonths; i++) {
+    const d = new Date(startYear, startMonth - 1 + i);
+    months.push({ month: d.getMonth() + 1, year: d.getFullYear(), amount });
+  }
+
+  const body = { aptNumber, type: 'income', method, note, months };
+  const res = await fetch('/api/transactions', {
+    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body)
+  });
+  if (res.ok) {
+    const created = await res.json();
+    await refreshData();
+    renderTransactions();
+    renderDashboard();
+    closeModal('transactionModal');
+    showToast('התשלום נרשם', 'success');
+    if (andPrint && created.length > 0) {
+      showReceipt(created[0].id);
+    }
+  }
+}
+
+function saveAndPrintReceipt() { saveTransaction(true); }
+
+async function cancelTransaction(id) {
+  const reason = prompt('סיבת ביטול (לדוגמה: צ׳ק חזר):', 'צ׳ק חזר');
+  if (reason === null) return;
+  await fetch(`/api/transactions/${id}/cancel`, {
+    method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ reason })
+  });
+  await refreshData();
+  renderTransactions();
+  renderDashboard();
+  showToast('התנועה בוטלה', 'warning');
+}
+
+async function deleteTransaction(id) {
+  if (!confirm('למחוק תנועה זו?')) return;
+  await fetch(`/api/transactions/${id}`, { method: 'DELETE' });
+  await refreshData();
+  renderTransactions();
+  renderDashboard();
+  showToast('נמחק', 'success');
+}
+
+function showReceipt(txId) {
+  const t = appData.transactions.find(x => x.id === txId);
+  if (!t) return;
+  const r = appData.residents.find(x => String(x.number) === String(t.aptNumber));
+  const now = new Date();
+  const receiptNum = txId.slice(-6).toUpperCase();
+
+  document.getElementById('receiptContent').innerHTML = `
+  <div class="receipt">
+    <div class="receipt-header">
+      <h3>${appData.settings.buildingName}</h3>
+      <p>קבלה מספר: ${receiptNum}</p>
+      <p>תאריך הפקה: ${now.toLocaleDateString('he-IL')}</p>
+    </div>
+    <div class="receipt-divider"></div>
+    <div class="receipt-row"><span>דייר:</span><span>${r ? r.lastName+' '+r.firstName : 'דירה '+t.aptNumber}</span></div>
+    <div class="receipt-row"><span>דירה מספר:</span><span>${t.aptNumber}</span></div>
+    <div class="receipt-row"><span>עבור חודש:</span><span>${MONTHS[(t.month||1)-1]} ${t.year}</span></div>
+    <div class="receipt-row"><span>אמצעי תשלום:</span><span>${methodName(t.method)}</span></div>
+    ${t.note ? `<div class="receipt-row"><span>פירוט:</span><span>${t.note}</span></div>` : ''}
+    <div class="receipt-divider"></div>
+    <div class="receipt-row receipt-total"><span>סכום:</span><span>₪${Number(t.amount).toLocaleString()}</span></div>
+    <div class="receipt-divider"></div>
+    <p style="text-align:center;font-size:0.8rem;">תודה! – ועד הבית</p>
+  </div>`;
+  openModal('receiptModal');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  DEFERRED CHECKS
+// ═══════════════════════════════════════════════════════════════
+function renderDeferred() {
+  const checks = [...appData.deferredChecks].sort((a,b) => new Date(a.dueDate) - new Date(b.dueDate));
+  if (!checks.length) {
+    document.getElementById('deferredContent').innerHTML = '<div class="empty-state"><div class="empty-icon">📅</div><p>אין המחאות דחויות</p></div>';
+    return;
+  }
+  let html = '<div class="table-wrap"><table><thead><tr><th>דירה</th><th>מס׳ המחאה</th><th>סכום</th><th>חודש</th><th>תאריך פירעון</th><th>סטטוס</th><th>פעולות</th></tr></thead><tbody>';
+  checks.forEach(d => {
+    const overdue = !d.cashed && new Date(d.dueDate) < new Date();
+    const soon = !d.cashed && new Date(d.dueDate) <= new Date(Date.now() + 15*24*60*60*1000);
+    html += `<tr>
+      <td>דירה ${d.aptNumber}</td>
+      <td dir="ltr">${d.checkNum || '-'}</td>
+      <td class="text-bold">₪${Number(d.amount).toLocaleString()}</td>
+      <td>${d.forMonth ? MONTHS[d.forMonth-1]+' '+d.forYear : '-'}</td>
+      <td class="${overdue ? 'text-danger text-bold' : soon ? 'text-warning' : ''}">${formatDate(d.dueDate)}</td>
+      <td>${d.cashed ? '<span class="badge badge-success">הופקד ✅</span>' : overdue ? '<span class="badge badge-danger">באיחור!</span>' : '<span class="badge badge-warning">ממתין</span>'}</td>
+      <td>
+        <div class="flex gap-1">
+          ${!d.cashed ? `<button class="btn btn-sm btn-success" onclick="cashCheck('${d.id}')">הפקד</button>` : ''}
+          <button class="btn-icon" onclick="deleteDeferred('${d.id}')">🗑️</button>
+        </div>
+      </td>
+    </tr>`;
+  });
+  html += '</tbody></table></div>';
+  document.getElementById('deferredContent').innerHTML = html;
+}
+
+function openDeferredModal() {
+  const sel = document.getElementById('dAptId');
+  sel.innerHTML = [...appData.residents].sort((a,b)=>a.number-b.number)
+    .map(r => `<option value="${r.number}">${r.number} – ${r.lastName} ${r.firstName}</option>`).join('');
+  document.getElementById('dStartMonth').value = String(nowDate.getMonth() + 1);
+  document.getElementById('dStartYear').value = nowDate.getFullYear();
+  document.getElementById('dNumMonths').value = 1;
+  document.getElementById('dCheckNum').value = '';
+  document.getElementById('deferredPreview').style.display = 'none';
+  autoFillDeferred();
+  openModal('deferredModal');
+}
+
+function autoFillDeferred() {
+  const aptNum = document.getElementById('dAptId').value;
+  const r = appData.residents.find(x => String(x.number) === String(aptNum));
+  if (r) {
+    const type = appData.settings.apartmentTypes.find(t => t.id === r.typeId);
+    if (type) document.getElementById('dAmount').value = type.monthlyFee;
+  }
+  buildDeferredPreview();
+}
+
+function buildDeferredPreview() {
+  const n = parseInt(document.getElementById('dNumMonths').value) || 1;
+  const startM = parseInt(document.getElementById('dStartMonth').value);
+  const startY = parseInt(document.getElementById('dStartYear').value);
+  const amount = Number(document.getElementById('dAmount').value);
+  if (n > 1) {
+    let checks = [];
+    for (let i = 0; i < n; i++) {
+      const d = new Date(startY, startM - 1 + i);
+      checks.push(`${MONTHS[d.getMonth()]} ${d.getFullYear()} – ₪${amount.toLocaleString()}`);
+    }
+    const el = document.getElementById('deferredPreview');
+    el.innerHTML = `${n} המחאות: ${checks.join(' | ')}`;
+    el.style.display = 'flex';
+  } else {
+    document.getElementById('deferredPreview').style.display = 'none';
+  }
+}
+
+async function saveDeferred() {
+  const aptNumber = document.getElementById('dAptId').value;
+  const amount = Number(document.getElementById('dAmount').value);
+  const n = parseInt(document.getElementById('dNumMonths').value) || 1;
+  const startM = parseInt(document.getElementById('dStartMonth').value);
+  const startY = parseInt(document.getElementById('dStartYear').value);
+  const checkNum = document.getElementById('dCheckNum').value;
+
+  const checks = [];
+  for (let i = 0; i < n; i++) {
+    const d = new Date(startY, startM - 1 + i);
+    // Due date = first of that month
+    const dueDate = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-01`;
+    checks.push({ aptNumber, checkNum: checkNum + (n > 1 ? `/${i+1}` : ''), amount, forMonth: d.getMonth()+1, forYear: d.getFullYear(), dueDate, cashed: false });
+  }
+
+  const res = await fetch('/api/deferred', {
+    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(checks)
+  });
+  if (res.ok) {
+    await refreshData();
+    renderDeferred();
+    renderDashboard();
+    closeModal('deferredModal');
+    showToast('ההמחאות נרשמו', 'success');
+  }
+}
+
+async function cashCheck(id) {
+  if (!confirm('לאשר הפקדת המחאה זו?')) return;
+  await fetch(`/api/deferred/${id}`, {
+    method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ cashed: true })
+  });
+  await refreshData();
+  renderDeferred();
+  renderDashboard();
+  showToast('ההמחאה הופקדה', 'success');
+}
+
+async function deleteDeferred(id) {
+  if (!confirm('למחוק?')) return;
+  await fetch(`/api/deferred/${id}`, { method: 'DELETE' });
+  await refreshData();
+  renderDeferred();
+  showToast('נמחק', 'success');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  PROJECTS (one-time)
+// ═══════════════════════════════════════════════════════════════
+function renderProjects() {
+  const projects = appData.oneTimeProjects;
+  if (!projects.length) {
+    document.getElementById('projectsContent').innerHTML = '<div class="empty-state"><div class="empty-icon">🎯</div><p>אין פרויקטים</p></div>';
+    return;
+  }
+
+  let html = '';
+  projects.forEach(p => {
+    const residents = [...appData.residents].sort((a,b) => a.number - b.number);
+    const paidCount = residents.filter(r => p.paidStatus && p.paidStatus[r.id]).length;
+    const totalCount = residents.length;
+    const pct = Math.round((paidCount / totalCount) * 100);
+
+    html += `<div class="card mb-2">
+      <div class="card-header">
+        <div class="card-title">🎯 ${p.name}</div>
+        <div class="flex gap-1">
+          <span class="badge badge-neutral">₪${Number(p.amount).toLocaleString()}/דירה</span>
+          <button class="btn-icon" onclick="deleteProject('${p.id}')">🗑️</button>
+        </div>
+      </div>
+      <div class="mb-2">
+        <div class="flex-between mb-1"><span class="text-sm">שילמו ${paidCount}/${totalCount} דירות</span><span class="text-sm text-bold">${pct}%</span></div>
+        <div class="progress-wrap"><div class="progress-bar ${pct < 50 ? 'danger' : pct < 80 ? 'warning' : ''}" style="width:${pct}%"></div></div>
+      </div>
+      <div class="chip-grid">`;
+
+    residents.forEach(r => {
+      const paid = p.paidStatus && p.paidStatus[r.id];
+      html += `<div class="chip ${paid ? 'paid' : 'unpaid'}" onclick="toggleProjectPay('${p.id}','${r.id}')">
+        ${paid ? '✅' : '❌'} דירה ${r.number}
+      </div>`;
+    });
+
+    html += `</div>
+      ${p.note ? `<p class="text-sm text-muted mt-2">${p.note}</p>` : ''}
+      ${p.dueDate ? `<p class="text-sm text-muted">יעד: ${formatDate(p.dueDate)}</p>` : ''}
+    </div>`;
+  });
+
+  document.getElementById('projectsContent').innerHTML = html;
+}
+
+function openProjectModal() {
+  document.getElementById('pName').value = '';
+  document.getElementById('pAmount').value = '';
+  document.getElementById('pDueDate').value = '';
+  document.getElementById('pNote').value = '';
+  openModal('projectModal');
+}
+
+async function saveProject() {
+  const body = {
+    name: document.getElementById('pName').value,
+    amount: Number(document.getElementById('pAmount').value),
+    dueDate: document.getElementById('pDueDate').value,
+    note: document.getElementById('pNote').value,
+  };
+  const res = await fetch('/api/projects', {
+    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body)
+  });
+  if (res.ok) {
+    await refreshData();
+    renderProjects();
+    closeModal('projectModal');
+    showToast('הפרויקט נוצר', 'success');
+  }
+}
+
+async function toggleProjectPay(projectId, residentId) {
+  const res = await fetch(`/api/projects/${projectId}/pay/${residentId}`, { method: 'PUT' });
+  if (res.ok) {
+    await refreshData();
+    renderProjects();
+  }
+}
+
+async function deleteProject(id) {
+  if (!confirm('למחוק פרויקט זה?')) return;
+  await fetch(`/api/projects/${id}`, { method: 'DELETE' });
+  await refreshData();
+  renderProjects();
+  showToast('נמחק', 'success');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  EXPENSES
+// ═══════════════════════════════════════════════════════════════
+function renderExpenses() {
+  const expenses = appData.transactions.filter(t => t.type === 'expense').sort((a,b)=>{ const da=new Date(a.year,(a.month||1)-1); const db=new Date(b.year,(b.month||1)-1); return db-da; });
+  if (!expenses.length) {
+    document.getElementById('expensesContent').innerHTML = '<div class="empty-state"><div class="empty-icon">💸</div><p>אין הוצאות</p></div>';
+    return;
+  }
+  let html = '<div class="table-wrap"><table><thead><tr><th>חודש/שנה</th><th>סכום</th><th>ספק/שירות</th><th>אמצעי</th><th>פירוט</th><th>פעולות</th></tr></thead><tbody>';
+  expenses.forEach(e => {
+    const svc = e.serviceId ? appData.serviceTransactions.find(s => s.id === e.serviceId) : null;
+    html += `<tr>
+      <td>${MONTHS[(e.month||1)-1]} ${e.year}</td>
+      <td class="text-danger text-bold">-₪${Number(e.amount).toLocaleString()}</td>
+      <td>${svc ? svc.name : '-'}</td>
+      <td>${methodName(e.method)}</td>
+      <td class="text-sm text-muted">${e.note || ''}</td>
+      <td><button class="btn-icon" onclick="deleteTransaction('${e.id}')">🗑️</button></td>
+    </tr>`;
+  });
+  html += '</tbody></table></div>';
+  document.getElementById('expensesContent').innerHTML = html;
+}
+
+function openExpenseModal() {
+  const sel = document.getElementById('eServiceId');
+  sel.innerHTML = `<option value="">-- ללא ספק ספציפי --</option>` +
+    appData.serviceTransactions.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+  document.getElementById('eMonth').value = nowDate.getMonth() + 1;
+  document.getElementById('eYear').value = nowDate.getFullYear();
+  document.getElementById('eAmount').value = '';
+  document.getElementById('eNote').value = '';
+  openModal('expenseModal');
+}
+
+async function saveExpense() {
+  const body = {
+    type: 'expense',
+    serviceId: document.getElementById('eServiceId').value,
+    amount: Number(document.getElementById('eAmount').value),
+    month: parseInt(document.getElementById('eMonth').value),
+    year: parseInt(document.getElementById('eYear').value),
+    method: document.getElementById('eMethod').value,
+    note: document.getElementById('eNote').value,
+    aptNumber: 'הוצאה',
+  };
+  const res = await fetch('/api/transactions', {
+    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ ...body, months: [{ month: body.month, year: body.year, amount: body.amount }] })
+  });
+  if (res.ok) {
+    // Fix type to expense (server saves as income by default)
+    const created = await res.json();
+    await fetch(`/api/transactions/${created[0].id}`, {
+      method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ type: 'expense', serviceId: body.serviceId, method: body.method, note: body.note, aptNumber: body.aptNumber })
+    });
+    await refreshData();
+    renderExpenses();
+    renderDashboard();
+    closeModal('expenseModal');
+    showToast('ההוצאה נרשמה', 'success');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  SERVICES
+// ═══════════════════════════════════════════════════════════════
+function renderServices() {
+  const services = appData.serviceTransactions;
+  if (!services.length) {
+    document.getElementById('servicesContent').innerHTML = '<div class="empty-state"><div class="empty-icon">🔧</div><p>אין עסקאות שירות</p></div>';
+    return;
+  }
+  let html = '';
+  services.forEach(s => {
+    const prof = appData.settings.professions.find(p => p.id === s.professionId);
+    const status = appData.settings.workStatuses.find(st => st.id === s.statusId);
+    const paid = (s.payments || []).reduce((sum, p) => sum + Number(p.amount), 0);
+    const remaining = Number(s.totalCost) - paid;
+    const pct = s.totalCost > 0 ? Math.round((paid / Number(s.totalCost)) * 100) : 0;
+
+    html += `<div class="card mb-2">
+      <div class="card-header">
+        <div>
+          <div class="card-title">${s.name}</div>
+          <div class="text-sm text-muted">${prof ? prof.name : '-'} ${s.phone ? '| ' + s.phone : ''}</div>
+        </div>
+        <div class="flex gap-1 flex-wrap">
+          ${s.isRetainer ? '<span class="badge badge-gold">ריטיינר</span>' : ''}
+          <span class="badge ${s.statusId === 'done' ? 'badge-success' : s.statusId === 'inprogress' ? 'badge-warning' : 'badge-neutral'}">${status ? status.name : '-'}</span>
+          <button class="btn-icon" onclick="openServiceModal('${s.id}')">✏️</button>
+          <button class="btn-icon" onclick="deleteService('${s.id}')">🗑️</button>
+        </div>
+      </div>
+      <div class="grid grid-3 mb-2" style="grid-template-columns:repeat(auto-fit,minmax(120px,1fr))">
+        <div><div class="stat-label">עלות כוללת</div><div class="text-bold">₪${Number(s.totalCost).toLocaleString()}</div></div>
+        <div><div class="stat-label">שולם</div><div class="text-success text-bold">₪${paid.toLocaleString()}</div></div>
+        <div><div class="stat-label">יתרה לספק</div><div class="${remaining > 0 ? 'text-danger' : 'text-success'} text-bold">₪${Math.abs(remaining).toLocaleString()}</div></div>
+      </div>
+      <div class="progress-wrap mb-2"><div class="progress-bar ${pct < 50 ? 'warning' : ''}" style="width:${pct}%"></div></div>
+      <button class="btn btn-sm btn-secondary" onclick="addServicePayment('${s.id}')">+ הוסף תשלום לספק</button>
+      ${s.payments && s.payments.length ? `<div class="mt-2 text-sm text-muted">תשלומים: ${s.payments.map(p=>`₪${p.amount} (${p.date||''})`).join(', ')}</div>` : ''}
+    </div>`;
+  });
+  document.getElementById('servicesContent').innerHTML = html;
+}
+
+function openServiceModal(id) {
+  editingId = id || null;
+  document.getElementById('serviceModalTitle').textContent = id ? 'עריכת עסקת שירות' : 'עסקת שירות חדשה';
+
+  const profSel = document.getElementById('svProfession');
+  profSel.innerHTML = appData.settings.professions.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+  const statSel = document.getElementById('svStatus');
+  statSel.innerHTML = appData.settings.workStatuses.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+
+  if (id) {
+    const s = appData.serviceTransactions.find(x => x.id === id);
+    document.getElementById('svName').value = s.name;
+    document.getElementById('svProfession').value = s.professionId;
+    document.getElementById('svStatus').value = s.statusId;
+    document.getElementById('svPhone').value = s.phone || '';
+    document.getElementById('svTotalCost').value = s.totalCost;
+    document.getElementById('svIsRetainer').checked = s.isRetainer;
+    document.getElementById('svNote').value = s.note || '';
+  } else {
+    ['svName','svPhone','svNote'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('svTotalCost').value = '';
+    document.getElementById('svIsRetainer').checked = false;
+  }
+  openModal('serviceModal');
+}
+
+async function saveService() {
+  const body = {
+    name: document.getElementById('svName').value,
+    professionId: document.getElementById('svProfession').value,
+    statusId: document.getElementById('svStatus').value,
+    phone: document.getElementById('svPhone').value,
+    totalCost: Number(document.getElementById('svTotalCost').value),
+    isRetainer: document.getElementById('svIsRetainer').checked,
+    note: document.getElementById('svNote').value,
+  };
+  const url = editingId ? `/api/services/${editingId}` : '/api/services';
+  const method = editingId ? 'PUT' : 'POST';
+  const res = await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  if (res.ok) {
+    await refreshData();
+    renderServices();
+    closeModal('serviceModal');
+    showToast('נשמר', 'success');
+  }
+}
+
+async function addServicePayment(serviceId) {
+  const amount = prompt('סכום התשלום לספק (₪):');
+  if (!amount) return;
+  const date = prompt('תאריך התשלום:', new Date().toLocaleDateString('he-IL'));
+  await fetch(`/api/services/${serviceId}/payments`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ amount: Number(amount), date })
+  });
+  await refreshData();
+  renderServices();
+  showToast('תשלום נרשם', 'success');
+}
+
+async function deleteService(id) {
+  if (!confirm('למחוק?')) return;
+  await fetch(`/api/services/${id}`, { method: 'DELETE' });
+  await refreshData();
+  renderServices();
+  showToast('נמחק', 'success');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  BALANCE
+// ═══════════════════════════════════════════════════════════════
+function renderBalance() {
+  const ob = appData.openingBalance;
+  const ext = appData.externalIncome;
+
+  let html = `
+  <div class="grid grid-2 mb-3">
+    <div class="card">
+      <div class="card-title mb-2">🏦 יתרת פתיחה</div>
+      <div class="form-group"><label class="form-label">יתרה בנקאית (₪)</label><input id="obBank" class="form-control" type="number" value="${ob.bank || 0}"></div>
+      <div class="form-group"><label class="form-label">יתרה במזומן (₪)</label><input id="obCash" class="form-control" type="number" value="${ob.cash || 0}"></div>
+      <div class="form-group"><label class="form-label">תאריך פתיחה</label><input id="obDate" class="form-control" type="date" value="${ob.date || ''}"></div>
+      <button class="btn btn-primary" onclick="saveOpeningBalance()">שמור יתרה</button>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">💼 הכנסות חיצוניות</div><button class="btn btn-primary btn-sm" onclick="addExternalIncome()">+ הוסף</button></div>
+      ${ext.length ? ext.map(e => `<div class="flex-between mb-1"><span>₪${Number(e.amount).toLocaleString()} – ${e.note || ''} (${e.date || ''})</span><button class="btn-icon" onclick="deleteExternal('${e.id}')">🗑️</button></div>`).join('') : '<p class="text-muted text-sm">אין הכנסות חיצוניות</p>'}
+    </div>
+  </div>`;
+
+  document.getElementById('balanceContent').innerHTML = html;
+}
+
+async function saveOpeningBalance() {
+  const body = {
+    bank: Number(document.getElementById('obBank').value),
+    cash: Number(document.getElementById('obCash').value),
+    date: document.getElementById('obDate').value,
+  };
+  await fetch('/api/balance/opening', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  await refreshData();
+  renderDashboard();
+  showToast('יתרת פתיחה נשמרה', 'success');
+}
+
+async function addExternalIncome() {
+  const amount = prompt('סכום (₪):');
+  if (!amount) return;
+  const note = prompt('פירוט:');
+  const date = new Date().toLocaleDateString('he-IL');
+  await fetch('/api/balance/external', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ amount: Number(amount), note, date })
+  });
+  await refreshData();
+  renderBalance();
+  renderDashboard();
+  showToast('נוסף', 'success');
+}
+
+async function deleteExternal(id) {
+  await fetch(`/api/balance/external/${id}`, { method: 'DELETE' });
+  await refreshData();
+  renderBalance();
+  renderDashboard();
+  showToast('נמחק', 'success');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  SETTINGS
+// ═══════════════════════════════════════════════════════════════
+function renderSettings() {
+  const s = appData.settings;
+  let html = `
+  <div class="grid grid-2">
+    <div class="card">
+      <div class="card-title mb-2">🏠 פרטי הבניין</div>
+      <div class="form-group"><label class="form-label">שם הבניין</label><input id="sBuildingName" class="form-control" value="${s.buildingName || ''}"></div>
+      <div class="form-group"><label class="form-label">סיסמת מנהל</label><input id="sAdminPw" class="form-control" type="text" value="${s.adminPassword || ''}"></div>
+      <div class="form-group"><label class="form-label">פרטי חשבון בנק</label><input id="sBankDetails" class="form-control" value="${s.bankDetails || ''}"></div>
+      <div class="form-group"><label class="form-label">קישור Paybox</label><input id="sPaybox" class="form-control" value="${s.payboxLink || ''}"></div>
+      <button class="btn btn-primary" onclick="saveGeneralSettings()">שמור הגדרות</button>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="card-title">🏗️ סוגי דירות</div><button class="btn btn-sm btn-primary" onclick="addAptType()">+ הוסף</button></div>
+      <div id="aptTypesList">`;
+
+  s.apartmentTypes.forEach(t => {
+    html += `<div class="flex-between mb-1 p-1" style="background:var(--bg2);border-radius:6px;gap:8px;">
+      <span class="text-sm">${t.name} – ₪${t.monthlyFee}/חודש</span>
+      <div class="flex gap-1">
+        <button class="btn-icon" onclick="editAptType('${t.id}')">✏️</button>
+        <button class="btn-icon" onclick="deleteAptType('${t.id}')">🗑️</button>
+      </div>
+    </div>`;
+  });
+
+  html += `</div></div>
+
+    <div class="card">
+      <div class="card-header"><div class="card-title">🔧 מקצועות</div><button class="btn btn-sm btn-primary" onclick="addProfession()">+ הוסף</button></div>
+      <div id="professionsList">`;
+
+  s.professions.forEach(p => {
+    html += `<div class="flex-between mb-1 p-1" style="background:var(--bg2);border-radius:6px;gap:8px;">
+      <span class="text-sm">${p.name}</span>
+      <div class="flex gap-1">
+        <button class="btn-icon" onclick="editProfession('${p.id}')">✏️</button>
+        <button class="btn-icon" onclick="deleteProfession('${p.id}')">🗑️</button>
+      </div>
+    </div>`;
+  });
+
+  html += `</div></div>
+
+    <div class="card">
+      <div class="card-header"><div class="card-title">💳 עמלות קבועות</div><button class="btn btn-sm btn-primary" onclick="addFee()">+ הוסף</button></div>
+      <div id="feesList">`;
+
+  s.fees.forEach(f => {
+    html += `<div class="flex-between mb-1 p-1" style="background:var(--bg2);border-radius:6px;gap:8px;">
+      <span class="text-sm">${f.name} – ₪${f.amount}</span>
+      <div class="flex gap-1">
+        <button class="btn-icon" onclick="editFee('${f.id}')">✏️</button>
+        <button class="btn-icon" onclick="deleteFee('${f.id}')">🗑️</button>
+      </div>
+    </div>`;
+  });
+
+  html += `</div></div></div>`;
+  document.getElementById('settingsContent').innerHTML = html;
+}
+
+async function saveGeneralSettings() {
+  const body = {
+    buildingName: document.getElementById('sBuildingName').value,
+    adminPassword: document.getElementById('sAdminPw').value,
+    bankDetails: document.getElementById('sBankDetails').value,
+    payboxLink: document.getElementById('sPaybox').value,
+  };
+  await fetch('/api/settings', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  await refreshData();
+  showToast('הגדרות נשמרו', 'success');
+}
+
+async function addAptType() {
+  const name = prompt('שם סוג הדירה:');
+  if (!name) return;
+  const fee = prompt('דמי ועד חודשיים (₪):');
+  if (!fee) return;
+  await fetch('/api/settings/aptTypes', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name, monthlyFee: Number(fee) }) });
+  await refreshData();
+  renderSettings();
+  showToast('נוסף', 'success');
+}
+
+async function editAptType(id) {
+  const t = appData.settings.apartmentTypes.find(x => x.id === id);
+  const name = prompt('שם:', t.name);
+  if (!name) return;
+  const fee = prompt('דמי ועד:', t.monthlyFee);
+  await fetch(`/api/settings/aptTypes/${id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name, monthlyFee: Number(fee) }) });
+  await refreshData();
+  renderSettings();
+  showToast('עודכן', 'success');
+}
+
+async function deleteAptType(id) {
+  if (!confirm('למחוק?')) return;
+  await fetch(`/api/settings/aptTypes/${id}`, { method:'DELETE' });
+  await refreshData();
+  renderSettings();
+}
+
+async function addProfession() {
+  const name = prompt('שם המקצוע:');
+  if (!name) return;
+  await fetch('/api/settings/professions', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name }) });
+  await refreshData();
+  renderSettings();
+  showToast('נוסף', 'success');
+}
+
+async function editProfession(id) {
+  const p = appData.settings.professions.find(x => x.id === id);
+  const name = prompt('שם:', p.name);
+  if (!name) return;
+  await fetch(`/api/settings/professions/${id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name }) });
+  await refreshData();
+  renderSettings();
+  showToast('עודכן', 'success');
+}
+
+async function deleteProfession(id) {
+  if (!confirm('למחוק?')) return;
+  await fetch(`/api/settings/professions/${id}`, { method:'DELETE' });
+  await refreshData();
+  renderSettings();
+}
+
+async function addFee() {
+  const name = prompt('שם העמלה:');
+  if (!name) return;
+  const amount = prompt('סכום (₪):');
+  await fetch('/api/settings/fees', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name, amount: Number(amount) }) });
+  await refreshData();
+  renderSettings();
+  showToast('נוסף', 'success');
+}
+
+async function editFee(id) {
+  const f = appData.settings.fees.find(x => x.id === id);
+  const name = prompt('שם:', f.name);
+  if (!name) return;
+  const amount = prompt('סכום:', f.amount);
+  await fetch(`/api/settings/fees/${id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name, amount: Number(amount) }) });
+  await refreshData();
+  renderSettings();
+  showToast('עודכן', 'success');
+}
+
+async function deleteFee(id) {
+  if (!confirm('למחוק?')) return;
+  await fetch(`/api/settings/fees/${id}`, { method:'DELETE' });
+  await refreshData();
+  renderSettings();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  UTILITIES
+// ═══════════════════════════════════════════════════════════════
+function populateMonthSelects() {
+  const selects = ['tMonth', 'eMonth', 'dStartMonth'];
+  selects.forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    sel.innerHTML = MONTHS.map((m,i) => `<option value="${i+1}">${m}</option>`).join('');
+    sel.value = String(nowDate.getMonth() + 1);
+  });
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// Close on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => { if(e.target === overlay) overlay.classList.remove('open'); });
+});
+
+function methodName(m) {
+  return { cash:'מזומן', check:"צ'ק שוטף", transfer:'העברה' }[m] || m || '-';
+}
+
+function formatDate(d) {
+  if (!d) return '-';
+  try { return new Date(d).toLocaleDateString('he-IL'); } catch(e) { return d; }
+}
+
+function exportData(type) { window.open(`/api/export/${type}`, '_blank'); }
+
+function showToast(msg, type = 'success') {
+  const c = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = `toast toast-${type}`;
+  t.innerHTML = `<span>${type==='success'?'✅':type==='error'?'❌':'⚠️'}</span> ${msg}`;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 3100);
+}
+</script>
+</body>
+</html>
