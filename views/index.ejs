@@ -253,10 +253,14 @@ function renderPersonal(apt){
       grid.insertAdjacentHTML('beforeend',`<div class="year-label">${m.year}</div><div class="month-row">`);
       yearGroup=m.year;
     }
+    const stateClass = m.state==='full' ? 'paid' : m.state==='partial' ? 'partial' : 'unpaid';
+    const icon = m.state==='full' ? '✓' : m.state==='partial' ? '~' : '✗';
+    const sub  = m.state==='partial' ? `<span class="month-sub">₪${m.paidAmount} / ₪${m.fullAmount}</span>` : '';
     grid.insertAdjacentHTML('beforeend',`
-      <div class="month-chip ${m.paid?'paid':'unpaid'}" title="${m.label}">
-        <span class="month-icon">${m.paid?'✓':'✗'}</span>
+      <div class="month-chip ${stateClass}" title="${m.label}">
+        <span class="month-icon">${icon}</span>
         <span class="month-name">${m.label.split(' ')[0]}</span>
+        ${sub}
       </div>`);
   });
   if(yearGroup) grid.insertAdjacentHTML('beforeend','</div>');

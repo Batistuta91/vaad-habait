@@ -21,24 +21,25 @@ function writeData(data) {
 
 const MONTHS = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
 
-// Calculate debt for one apartment
+// Calculate debt for one apartment — supports partial payments (number values)
 function calcDebt(apt, data) {
   const now = new Date();
   const currentYear  = now.getFullYear();
-  const currentMonth = now.getMonth() + 1; // 1-12
+  const currentMonth = now.getMonth() + 1;
 
   let monthlyDebt = 0;
-  const startYear = Math.min(...(data.years || [2025]));
 
   for (const year of (data.years || [])) {
-    const monthsToCheck = (year < currentYear)
-      ? 12
+    const monthsToCheck = (year < currentYear) ? 12
       : (year === currentYear ? currentMonth : 0);
     for (let m = 1; m <= monthsToCheck; m++) {
       const key = `${year}-${m}`;
-      if (!apt.payments[key]) {
-        monthlyDebt += data.monthlyFee || 0;
-      }
+      const paid = apt.payments[key];
+      // support both boolean (legacy) and number (partial)
+      const paidAmount = typeof paid === 'boolean'
+        ? (paid ? (data.monthlyFee || 0) : 0)
+        : (Number(paid) || 0);
+      monthlyDebt += Math.max(0, (data.monthlyFee || 0) - paidAmount);
     }
   }
 
@@ -96,11 +97,10 @@ app.post('/api/login', (req, res) => {
     const monthsToShow = (year < now.getFullYear()) ? 12
       : (year === now.getFullYear() ? now.getMonth() + 1 : 0);
     for (let m = 1; m <= monthsToShow; m++) {
-      monthlyStatus.push({
-        year, month: m,
-        label: MONTHS[m-1] + ' ' + year,
-        paid: !!apt.payments[`${year}-${m}`]
-      });
+      const rawP2 = apt.payments[`${year}-${m}`];
+      const paidAmt = typeof rawP2 === 'boolean' ? (rawP2 ? data.monthlyFee : 0) : (Number(rawP2) || 0);
+      const stStr = paidAmt <= 0 ? 'unpaid' : paidAmt >= data.monthlyFee ? 'full' : 'partial';
+      monthlyStatus.push({ year, month: m, label: MONTHS[m-1] + ' ' + year, state: stStr, paidAmount: paidAmt, fullAmount: data.monthlyFee });
     }
   }
 
@@ -144,11 +144,10 @@ app.post('/api/apartment-status', (req, res) => {
     const monthsToShow = (year < now.getFullYear()) ? 12
       : (year === now.getFullYear() ? now.getMonth() + 1 : 0);
     for (let m = 1; m <= monthsToShow; m++) {
-      monthlyStatus.push({
-        year, month: m,
-        label: MONTHS[m-1] + ' ' + year,
-        paid: !!apt.payments[`${year}-${m}`]
-      });
+      const rawP2 = apt.payments[`${year}-${m}`];
+      const paidAmt = typeof rawP2 === 'boolean' ? (rawP2 ? data.monthlyFee : 0) : (Number(rawP2) || 0);
+      const stStr = paidAmt <= 0 ? 'unpaid' : paidAmt >= data.monthlyFee ? 'full' : 'partial';
+      monthlyStatus.push({ year, month: m, label: MONTHS[m-1] + ' ' + year, state: stStr, paidAmount: paidAmt, fullAmount: data.monthlyFee });
     }
   }
 
