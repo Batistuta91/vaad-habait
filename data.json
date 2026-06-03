@@ -12,7 +12,10 @@
   },
   "payboxLink": "https://payboxapp.page.link/xxxx",
   "adminPassword": "vaad2024",
-  "years": [2025, 2026],
+  "years": [
+    2025,
+    2026
+  ],
   "announcements": [
     {
       "id": "ann1",
@@ -31,26 +34,186 @@
   ],
   "transactions": [],
   "apartments": [
-    { "id": 1,  "ownerName": "", "password": "1234", "payments": {}, "note": "" },
-    { "id": 2,  "ownerName": "", "password": "1234", "payments": {}, "note": "" },
-    { "id": 3,  "ownerName": "", "password": "1234", "payments": {}, "note": "" },
-    { "id": 4,  "ownerName": "", "password": "1234", "payments": {}, "note": "" },
-    { "id": 5,  "ownerName": "", "password": "1234", "payments": {}, "note": "" },
-    { "id": 6,  "ownerName": "", "password": "1234", "payments": {}, "note": "" },
-    { "id": 7,  "ownerName": "", "password": "1234", "payments": {}, "note": "" },
-    { "id": 8,  "ownerName": "", "password": "1234", "payments": {}, "note": "" },
-    { "id": 9,  "ownerName": "", "password": "1234", "payments": {}, "note": "" },
-    { "id": 10, "ownerName": "", "password": "1234", "payments": {}, "note": "" },
-    { "id": 11, "ownerName": "", "password": "1234", "payments": {}, "note": "" },
-    { "id": 12, "ownerName": "", "password": "1234", "payments": {}, "note": "" },
-    { "id": 13, "ownerName": "", "password": "1234", "payments": {}, "note": "" },
-    { "id": 14, "ownerName": "", "password": "1234", "payments": {}, "note": "" },
-    { "id": 15, "ownerName": "", "password": "1234", "payments": {}, "note": "" },
-    { "id": 16, "ownerName": "", "password": "1234", "payments": {}, "note": "" },
-    { "id": 17, "ownerName": "", "password": "1234", "payments": {}, "note": "" },
-    { "id": 18, "ownerName": "", "password": "1234", "payments": {}, "note": "" },
-    { "id": 19, "ownerName": "", "password": "1234", "payments": {}, "note": "" },
-    { "id": 20, "ownerName": "", "password": "1234", "payments": {}, "note": "" }
+    {
+      "id": 1,
+      "ownerName": "",
+      "password": "1234",
+      "payments": {},
+      "note": "",
+      "ownerType": "owner",
+      "tenantName": ""
+    },
+    {
+      "id": 2,
+      "ownerName": "",
+      "password": "1234",
+      "payments": {},
+      "note": "",
+      "ownerType": "owner",
+      "tenantName": ""
+    },
+    {
+      "id": 3,
+      "ownerName": "",
+      "password": "1234",
+      "payments": {},
+      "note": "",
+      "ownerType": "owner",
+      "tenantName": ""
+    },
+    {
+      "id": 4,
+      "ownerName": "",
+      "password": "1234",
+      "payments": {},
+      "note": "",
+      "ownerType": "owner",
+      "tenantName": ""
+    },
+    {
+      "id": 5,
+      "ownerName": "",
+      "password": "1234",
+      "payments": {},
+      "note": "",
+      "ownerType": "owner",
+      "tenantName": ""
+    },
+    {
+      "id": 6,
+      "ownerName": "",
+      "password": "1234",
+      "payments": {},
+      "note": "",
+      "ownerType": "owner",
+      "tenantName": ""
+    },
+    {
+      "id": 7,
+      "ownerName": "",
+      "password": "1234",
+      "payments": {},
+      "note": "",
+      "ownerType": "owner",
+      "tenantName": ""
+    },
+    {
+      "id": 8,
+      "ownerName": "",
+      "password": "1234",
+      "payments": {},
+      "note": "",
+      "ownerType": "owner",
+      "tenantName": ""
+    },
+    {
+      "id": 9,
+      "ownerName": "",
+      "password": "1234",
+      "payments": {},
+      "note": "",
+      "ownerType": "owner",
+      "tenantName": ""
+    },
+    {
+      "id": 10,
+      "ownerName": "",
+      "password": "1234",
+      "payments": {},
+      "note": "",
+      "ownerType": "owner",
+      "tenantName": ""
+    },
+    {
+      "id": 11,
+      "ownerName": "",
+      "password": "1234",
+      "payments": {},
+      "note": "",
+      "ownerType": "owner",
+      "tenantName": ""
+    },
+    {
+      "id": 12,
+      "ownerName": "",
+      "password": "1234",
+      "payments": {},
+      "note": "",
+      "ownerType": "owner",
+      "tenantName": ""
+    },
+    {
+      "id": 13,
+      "ownerName": "",
+      "password": "1234",
+      "payments": {},
+      "note": "",
+      "ownerType": "owner",
+      "tenantName": ""
+    },
+    {
+      "id": 14,
+      "ownerName": "",
+      "password": "1234",
+      "payments": {},
+      "note": "",
+      "ownerType": "owner",
+      "tenantName": ""
+    },
+    {
+      "id": 15,
+      "ownerName": "",
+      "password": "1234",
+      "payments": {},
+      "note": "",
+      "ownerType": "owner",
+      "tenantName": ""
+    },
+    {
+      "id": 16,
+      "ownerName": "",
+      "password": "1234",
+      "payments": {},
+      "note": "",
+      "ownerType": "owner",
+      "tenantName": ""
+    },
+    {
+      "id": 17,
+      "ownerName": "",
+      "password": "1234",
+      "payments": {},
+      "note": "",
+      "ownerType": "owner",
+      "tenantName": ""
+    },
+    {
+      "id": 18,
+      "ownerName": "",
+      "password": "1234",
+      "payments": {},
+      "note": "",
+      "ownerType": "owner",
+      "tenantName": ""
+    },
+    {
+      "id": 19,
+      "ownerName": "",
+      "password": "1234",
+      "payments": {},
+      "note": "",
+      "ownerType": "owner",
+      "tenantName": ""
+    },
+    {
+      "id": 20,
+      "ownerName": "",
+      "password": "1234",
+      "payments": {},
+      "note": "",
+      "ownerType": "owner",
+      "tenantName": ""
+    }
   ],
   "specialCharges": []
 }

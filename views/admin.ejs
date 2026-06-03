@@ -50,15 +50,17 @@
   .leg-partial{background:rgba(245,200,66,0.14);color:var(--gold);}
   .leg-unpaid {background:rgba(239,68,68,0.08);color:var(--red);}
 
-  /* APT TABLE */
+  /* APT TABLE v2 */
   .apt-table-wrap{overflow-x:auto;}
-  .apt-grid{display:grid;grid-template-columns:40px 1fr 140px 120px 1fr 100px;gap:8px;align-items:center;padding:9px 12px;border-bottom:1px solid var(--border);}
-  .apt-grid.hdr{background:var(--bg);color:var(--text-muted);font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;border-radius:var(--radius-sm) var(--radius-sm) 0 0;}
-  .apt-grid:not(.hdr):hover{background:rgba(255,255,255,0.02);}
-  .apt-grid input{background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'Heebo',sans-serif;font-size:0.84rem;padding:7px 10px;width:100%;direction:rtl;transition:var(--transition);}
-  .apt-grid input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 2px var(--gold-dim);}
-  @media(max-width:820px){.apt-grid{grid-template-columns:36px 1fr 130px 1fr;}.apt-grid .col-pw,.apt-grid .col-status{display:none;}.apt-grid.hdr .col-pw,.apt-grid.hdr .col-status{display:none;}}
-  @media(max-width:520px){.apt-grid{grid-template-columns:32px 1fr;}.apt-grid .col-pass,.apt-grid .col-note{display:none;}.apt-grid.hdr .col-pass,.apt-grid.hdr .col-note{display:none;}}
+  .apt-grid-v2{display:grid;grid-template-columns:40px 110px 1fr 1fr 130px 110px 1fr 90px;gap:8px;align-items:center;padding:9px 12px;border-bottom:1px solid var(--border);}
+  .apt-grid-v2.hdr{background:var(--bg);color:var(--text-muted);font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;border-radius:var(--radius-sm) var(--radius-sm) 0 0;}
+  .apt-grid-v2:not(.hdr):hover{background:rgba(255,255,255,0.02);}
+  .apt-grid-v2 input,.apt-grid-v2 select{background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'Heebo',sans-serif;font-size:0.84rem;padding:7px 10px;width:100%;direction:rtl;transition:var(--transition);}
+  .apt-grid-v2 input:focus,.apt-grid-v2 select:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 2px var(--gold-dim);}
+  .apt-grid-v2 .tenant-field-wrap.active input{border-color:rgba(245,158,11,0.5)!important;background:rgba(245,158,11,0.06)!important;}
+  @media(max-width:1000px){.apt-grid-v2{grid-template-columns:36px 100px 1fr 1fr 1fr;}.apt-grid-v2 .col-pw,.apt-grid-v2 .col-status{display:none;}.apt-grid-v2.hdr .col-pw,.apt-grid-v2.hdr .col-status{display:none;}}
+  @media(max-width:680px){.apt-grid-v2{grid-template-columns:32px 90px 1fr 1fr;}.apt-grid-v2 .col-pass,.apt-grid-v2 .col-note{display:none;}.apt-grid-v2.hdr .col-pass,.apt-grid-v2.hdr .col-note{display:none;}}
+  @media(max-width:480px){.apt-grid-v2{grid-template-columns:28px 80px 1fr;}.apt-grid-v2 .col-tenant{display:none;}.apt-grid-v2.hdr .col-tenant{display:none;}}
 
   /* SPECIAL CHARGES */
   .sc-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:14px;}
@@ -212,25 +214,66 @@
 
     <!-- ── APARTMENTS ────────────────────────────────────────────── -->
     <div class="tab-pane" id="tab-apartments">
+
+      <!-- legend -->
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;font-size:0.82rem;align-items:center;">
+        <span style="display:inline-flex;align-items:center;gap:5px;">
+          <span style="background:var(--blue-dim);border:1px solid rgba(99,102,241,0.3);color:var(--blue);padding:3px 10px;border-radius:50px;font-size:0.75rem;font-weight:700;">🏠 בעלים</span>
+          הדייר הוא בעל הדירה
+        </span>
+        <span style="display:inline-flex;align-items:center;gap:5px;">
+          <span style="background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.3);color:#d97706;padding:3px 10px;border-radius:50px;font-size:0.75rem;font-weight:700;">🔑 שכירות</span>
+          הדירה מושכרת — שם הבעלים + שם השוכר
+        </span>
+      </div>
+
       <div class="card" style="padding:0;">
         <div class="apt-table-wrap">
-          <div class="apt-grid hdr">
-            <div>#</div><div>שם בעל הדירה</div>
+          <!-- header -->
+          <div class="apt-grid-v2 hdr">
+            <div>#</div>
+            <div>סוג</div>
+            <div>שם בעל הדירה</div>
+            <div class="col-tenant">שם השוכר</div>
             <div class="col-pass">סיסמה חדשה</div>
-            <div class="col-pw">סיסמה נוכחית</div>
-            <div class="col-note">הערה לדייר</div>
+            <div class="col-pw">סיסמה</div>
+            <div class="col-note">הערה</div>
             <div class="col-status">סטטוס</div>
           </div>
           <% apartments.forEach(apt=>{ %>
-          <div class="apt-grid" data-apt-id="<%=apt.id%>">
+          <div class="apt-grid-v2" data-apt-id="<%=apt.id%>">
+            <!-- # -->
             <div><span class="apt-id-tag"><%=apt.id%></span></div>
-            <div><input type="text" class="owner-input" value="<%=apt.ownerName||''%>" placeholder="שם בעל הדירה"></div>
-            <div class="col-pass"><input type="text" class="pass-input" value="" placeholder="סיסמה חדשה"></div>
-            <div class="col-pw" style="display:flex;align-items:center;gap:6px;">
-              <span style="font-size:0.76rem;color:var(--text-dim);" id="cur-pass-<%=apt.id%>">•••</span>
-              <button class="btn btn-ghost btn-sm show-pass-btn" data-pass="<%=apt.password%>" data-id="<%=apt.id%>" style="font-size:0.73rem;padding:4px 8px;">הצג</button>
+
+            <!-- type selector -->
+            <div>
+              <select class="type-select" style="background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'Heebo',sans-serif;font-size:0.82rem;padding:6px 10px;direction:rtl;width:100%;cursor:pointer;">
+                <option value="owner"  <%=(apt.ownerType||'owner')==='owner'  ?'selected':''%>>🏠 בעלים</option>
+                <option value="tenant" <%=(apt.ownerType||'owner')==='tenant' ?'selected':''%>>🔑 שכירות</option>
+              </select>
             </div>
-            <div class="col-note"><input type="text" class="note-input" value="<%=apt.note||''%>" placeholder="הערה לדייר..."></div>
+
+            <!-- owner name -->
+            <div><input type="text" class="owner-input" value="<%=apt.ownerName||''%>" placeholder="שם בעל הדירה"></div>
+
+            <!-- tenant name — shown only when type=tenant -->
+            <div class="col-tenant tenant-field-wrap" style="<%=(apt.ownerType||'owner')==='tenant'?'':'opacity:0.3;pointer-events:none;'%>">
+              <input type="text" class="tenant-input" value="<%=apt.tenantName||''%>" placeholder="שם השוכר" style="<%=(apt.ownerType||'owner')==='tenant'?'border-color:rgba(245,158,11,0.5);':''%>">
+            </div>
+
+            <!-- new password -->
+            <div class="col-pass"><input type="text" class="pass-input" value="" placeholder="סיסמה חדשה"></div>
+
+            <!-- show current password -->
+            <div class="col-pw" style="display:flex;align-items:center;gap:5px;">
+              <span style="font-size:0.75rem;color:var(--text-dim);" id="cur-pass-<%=apt.id%>">•••</span>
+              <button class="btn btn-ghost btn-sm show-pass-btn" data-pass="<%=apt.password%>" data-id="<%=apt.id%>" style="font-size:0.72rem;padding:3px 7px;">הצג</button>
+            </div>
+
+            <!-- note -->
+            <div class="col-note"><input type="text" class="note-input" value="<%=apt.note||''%>" placeholder="הערה..."></div>
+
+            <!-- status badge -->
             <div class="col-status"><span class="badge" id="row-status-<%=apt.id%>">—</span></div>
           </div>
           <% }) %>
@@ -669,6 +712,23 @@ function updateAptRowStatus(aptId){
 }
 function updateAllAptStatuses(){serverApartments.forEach(a=>updateAptRowStatus(a.id));}
 
+// TENANT TYPE TOGGLE
+document.addEventListener('change',e=>{
+  const sel=e.target.closest('.type-select');
+  if(!sel) return;
+  const row=sel.closest('.apt-grid-v2');
+  if(!row) return;
+  const wrap=row.querySelector('.tenant-field-wrap');
+  const input=row.querySelector('.tenant-input');
+  if(!wrap||!input) return;
+  const isTenant=sel.value==='tenant';
+  wrap.style.opacity=isTenant?'1':'0.3';
+  wrap.style.pointerEvents=isTenant?'auto':'none';
+  wrap.classList.toggle('active',isTenant);
+  if(!isTenant) input.value='';
+  else setTimeout(()=>input.focus(),50);
+});
+
 // SHOW PASSWORD
 document.addEventListener('click',e=>{
   const btn=e.target.closest('.show-pass-btn');
@@ -856,14 +916,16 @@ async function saveAll(){
 
   // Apartments
   const apartments=[];
-  document.querySelectorAll('.apt-grid[data-apt-id]').forEach(row=>{
+  document.querySelectorAll('.apt-grid-v2[data-apt-id]').forEach(row=>{
     const id=parseInt(row.dataset.aptId);
-    const pv=row.querySelector('.pass-input').value;
+    const pv=row.querySelector('.pass-input')?row.querySelector('.pass-input').value:'';
     apartments.push({id,
-      ownerName: row.querySelector('.owner-input').value||'',
-      note: row.querySelector('.note-input')?row.querySelector('.note-input').value||'':'',
-      password: pv&&pv.length>=4?pv:'',
-      payments: payments[id]||{}
+      ownerName:  row.querySelector('.owner-input').value||'',
+      ownerType:  row.querySelector('.type-select').value||'owner',
+      tenantName: row.querySelector('.tenant-input')?row.querySelector('.tenant-input').value||'':'',
+      note:       row.querySelector('.note-input')?row.querySelector('.note-input').value||'':'',
+      password:   pv&&pv.length>=4?pv:'',
+      payments:   payments[id]||{}
     });
   });
 

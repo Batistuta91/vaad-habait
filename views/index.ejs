@@ -324,7 +324,17 @@ function showToast(msg,type='success'){
 function renderPersonal(apt){
   document.getElementById('personal-area').style.display='block';
   document.getElementById('pa-num').textContent=apt.id;
-  document.getElementById('pa-owner').textContent=apt.ownerName||`דירה ${apt.id}`;
+  // Show owner/tenant info
+  const ownerEl=document.getElementById('pa-owner');
+  if(apt.ownerType==='tenant' && apt.tenantName){
+    ownerEl.innerHTML=`
+      <span style="font-size:0.78rem;color:var(--text-muted);">בעלים: ${apt.ownerName||'—'}</span><br>
+      <span style="font-weight:700;">שוכר: ${apt.tenantName}</span>
+      <span style="margin-right:6px;background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.35);color:#d97706;padding:2px 8px;border-radius:50px;font-size:0.72rem;font-weight:700;">🔑 שכירות</span>`;
+  } else {
+    ownerEl.innerHTML=`${apt.ownerName||`דירה ${apt.id}`}
+      <span style="margin-right:6px;background:var(--blue-dim);border:1px solid rgba(99,102,241,0.3);color:var(--blue);padding:2px 8px;border-radius:50px;font-size:0.72rem;font-weight:700;">🏠 בעלים</span>`;
+  }
 
   const badge=document.getElementById('pa-debt-badge');
   if(apt.debt===0){

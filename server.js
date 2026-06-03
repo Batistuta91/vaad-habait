@@ -92,6 +92,7 @@ app.post('/api/login', (req, res) => {
   const debt = calcDebt(apt, data);
   res.json({ success: true, apartment: {
     id: apt.id, ownerName: apt.ownerName||'',
+    ownerType: apt.ownerType||'owner', tenantName: apt.tenantName||'',
     debt: debt.total, monthlyDebt: debt.monthlyDebt, specialDebt: debt.specialDebt,
     note: apt.note, monthlyStatus: buildMonthlyStatus(apt, data),
     specialCharges: (data.specialCharges||[]).map(sc => {
@@ -109,6 +110,7 @@ app.post('/api/apartment-status', (req, res) => {
   const debt = calcDebt(apt, data);
   res.json({ success: true, apartment: {
     id: apt.id, ownerName: apt.ownerName||'',
+    ownerType: apt.ownerType||'owner', tenantName: apt.tenantName||'',
     debt: debt.total, monthlyDebt: debt.monthlyDebt, specialDebt: debt.specialDebt,
     note: apt.note, monthlyStatus: buildMonthlyStatus(apt, data),
     specialCharges: (data.specialCharges||[]).map(sc => {
@@ -169,8 +171,10 @@ app.post('/api/admin/save', (req, res) => {
     apartments.forEach(inc => {
       const ex = data.apartments.find(a => a.id === inc.id);
       if (!ex) return;
-      ex.ownerName = inc.ownerName !== undefined ? inc.ownerName : ex.ownerName;
-      ex.note      = inc.note      !== undefined ? inc.note      : ex.note;
+      ex.ownerName  = inc.ownerName  !== undefined ? inc.ownerName  : ex.ownerName;
+      ex.ownerType  = inc.ownerType  !== undefined ? inc.ownerType  : (ex.ownerType||'owner');
+      ex.tenantName = inc.tenantName !== undefined ? inc.tenantName : (ex.tenantName||'');
+      ex.note       = inc.note       !== undefined ? inc.note       : ex.note;
       if (inc.password && inc.password.length >= 4) ex.password = inc.password;
       if (inc.payments !== undefined) ex.payments = inc.payments;
     });
