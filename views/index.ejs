@@ -173,7 +173,25 @@
       </div>
     </div>
     <% } else { %>
-    <div class="public-hidden-msg">🔒 נתוני החובות אינם מוצגים באופן ציבורי.<br>התחבר לאזור האישי לצפייה בסטטוס שלך.</div>
+    <div class="card">
+      <div class="public-hidden-msg" style="padding:20px 0 16px;">
+        🔒 פירוט החובות לפי דירה אינו מוצג באופן ציבורי
+      </div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:4px;">
+        <div class="fin-card" style="min-width:140px;">
+          <div class="fin-val" style="color:var(--red);"><%=publicApartments.filter(a=>a.debt>0).length%></div>
+          <div class="fin-lbl">דיירים עם חוב</div>
+        </div>
+        <div class="fin-card" style="min-width:140px;">
+          <div class="fin-val" style="color:var(--gold);">₪<%=publicApartments.reduce((s,a)=>s+a.debt,0).toLocaleString()%></div>
+          <div class="fin-lbl">חוב כולל</div>
+        </div>
+        <div class="fin-card" style="min-width:140px;">
+          <div class="fin-val" style="color:var(--green);"><%=publicApartments.filter(a=>a.debt===0).length%></div>
+          <div class="fin-lbl">דיירים ללא חוב</div>
+        </div>
+      </div>
+    </div>
     <% } %>
   </section>
 

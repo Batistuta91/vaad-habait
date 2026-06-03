@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ממשק מנהל — <%= buildingName %></title>
-  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/style.css?v=<%=cssVersion%>">
   <script>if(localStorage.getItem('vaad_theme')==='light') document.documentElement.classList.add('pre-light');</script>
   <style>
   html.pre-light body{background:#f5f6fa!important;}
@@ -97,6 +97,40 @@
   .ios-toggle input:checked + .slider{background:var(--green);border-color:var(--green);}
   .ios-toggle input:checked + .slider::before{transform:translateX(-18px);}
 
+  /* PARTIAL POPUP */
+  .partial-popup{
+    display:none;position:fixed;z-index:200;
+    background:var(--card);border:1px solid var(--border-strong);
+    border-radius:var(--radius);box-shadow:var(--shadow-lg);
+    min-width:260px;max-width:320px;
+    animation:popIn 0.15s ease;
+  }
+  @keyframes popIn{from{opacity:0;transform:scale(0.93) translateY(-6px);}to{opacity:1;transform:scale(1) translateY(0);}}
+  .partial-popup.show{display:block;}
+  .popup-inner{padding:20px;}
+  .popup-header{display:flex;align-items:flex-start;gap:10px;margin-bottom:16px;}
+  .popup-icon{font-size:1.4rem;flex-shrink:0;margin-top:2px;}
+  .popup-amount-wrap{
+    display:flex;align-items:center;
+    background:var(--bg2);border:2px solid var(--gold);border-radius:var(--radius-sm);
+    padding:0 14px;margin-bottom:12px;gap:8px;
+  }
+  .popup-currency{font-size:1.3rem;font-weight:700;color:var(--gold);}
+  .popup-amount-wrap input{
+    background:transparent;border:none;outline:none;
+    color:var(--text);font-family:'Heebo',sans-serif;font-size:1.5rem;font-weight:700;
+    padding:12px 0;width:100%;direction:rtl;text-align:right;
+  }
+  .popup-amount-wrap input::placeholder{color:var(--text-dim);}
+  .popup-quick-btns{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+  .popup-quick-btn{
+    padding:5px 12px;border-radius:50px;font-size:0.8rem;font-weight:600;
+    cursor:pointer;border:1px solid var(--border-strong);background:var(--bg2);
+    color:var(--text-muted);transition:var(--transition);font-family:'Heebo',sans-serif;
+  }
+  .popup-quick-btn:hover{background:var(--gold-dim);border-color:var(--gold);color:var(--gold);}
+  .popup-actions{display:flex;gap:8px;justify-content:flex-end;}
+
   /* SUMMARY */
   .sum-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:24px;}
   .sum-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px;text-align:center;}
@@ -167,7 +201,6 @@
       <div class="sum-card"><div class="sum-val" id="sum-clean" style="color:var(--green);">—</div><div class="sum-lbl">ללא חוב</div></div>
       <div class="sum-card"><div class="sum-val" id="sum-owed"  style="color:var(--red);">—</div><div class="sum-lbl">עם חוב</div></div>
       <div class="sum-card"><div class="sum-val" id="sum-total" style="color:var(--gold);">—</div><div class="sum-lbl">חוב כולל ₪</div></div>
-      <div class="sum-card"><div class="sum-val" id="sum-collected" style="color:var(--blue);">—</div><div class="sum-lbl">נגבה ₪</div></div>
     </div>
 
     <div class="tabs">
@@ -469,16 +502,27 @@
 
 <!-- PARTIAL POPUP -->
 <div class="partial-popup" id="partial-popup">
-  <h4 id="popup-title" style="font-size:0.9rem;font-weight:700;margin-bottom:12px;color:var(--text);"></h4>
-  <input type="number" id="popup-amount" min="0" inputmode="numeric"
-    style="width:100%;background:var(--bg2);border:1px solid var(--border-strong);border-radius:6px;color:var(--text);font-family:Heebo,sans-serif;font-size:1rem;padding:10px 12px;margin-bottom:10px;direction:rtl;">
-  <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">
-    <button class="btn btn-ghost btn-sm" id="popup-cancel">ביטול</button>
-    <button class="btn btn-danger btn-sm" id="popup-clear">לא שולם</button>
-    <button class="btn btn-primary btn-sm" id="popup-save">שמור</button>
+  <div class="popup-inner">
+    <div class="popup-header">
+      <span class="popup-icon">✏️</span>
+      <div>
+        <div id="popup-title" style="font-weight:700;font-size:0.95rem;color:var(--text);"></div>
+        <div id="popup-subtitle" style="font-size:0.78rem;color:var(--text-muted);margin-top:2px;"></div>
+      </div>
+    </div>
+    <div class="popup-amount-wrap">
+      <span class="popup-currency">₪</span>
+      <input type="number" id="popup-amount" min="0" inputmode="numeric" placeholder="0">
+    </div>
+    <div class="popup-quick-btns" id="popup-quick-btns"></div>
+    <div class="popup-actions">
+      <button class="btn btn-ghost btn-sm" id="popup-cancel">ביטול</button>
+      <button class="btn btn-danger btn-sm" id="popup-clear">✗ לא שולם</button>
+      <button class="btn btn-primary btn-sm" id="popup-save">✓ שמור</button>
+    </div>
   </div>
 </div>
-<div id="popup-overlay" style="display:none;position:fixed;inset:0;z-index:199;"></div>
+<div id="popup-overlay" style="display:none;position:fixed;inset:0;z-index:199;background:rgba(0,0,0,0.3);backdrop-filter:blur(2px);"></div>
 
 <div class="toast" id="toast"></div>
 
@@ -708,16 +752,14 @@ document.getElementById('add-year-btn').addEventListener('click',async()=>{
 
 // SUMMARY
 function updateSummary(){
-  let clean=0,owed=0,total=0,collected=0;
+  let clean=0,owed=0,total=0;
   serverApartments.forEach(a=>{
     const d=calcAptDebt(a.id);
     if(d===0) clean++; else{owed++;total+=d;}
-    Object.values(payments[a.id]).forEach(v=>{collected+=v||0;});
   });
   document.getElementById('sum-clean').textContent=clean;
   document.getElementById('sum-owed').textContent=owed;
   document.getElementById('sum-total').textContent='₪'+total.toLocaleString();
-  document.getElementById('sum-collected').textContent='₪'+collected.toLocaleString();
 }
 
 function updateAptRowStatus(aptId){
@@ -761,36 +803,83 @@ function openPartialPopup(cell){
   popupCell=cell;
   const aptId=parseInt(cell.dataset.apt),key=cell.dataset.key;
   const [yr,mn]=key.split('-');
-  document.getElementById('popup-title').textContent=`דירה ${aptId} — ${MONTHS_HE[parseInt(mn)-1]} ${yr}`;
-  document.getElementById('popup-amount').value=payments[aptId][key]||'';
-  document.getElementById('popup-amount').placeholder=`מתוך ₪${serverMonthlyFee}`;
+  const apt=serverApartments.find(a=>a.id===aptId);
+  document.getElementById('popup-title').textContent=`דירה ${aptId}${apt&&apt.ownerName?' — '+apt.ownerName:''}`;
+  document.getElementById('popup-subtitle').textContent=`${MONTHS_HE[parseInt(mn)-1]} ${yr} | ועד: ₪${serverMonthlyFee}`;
+
+  const cur=payments[aptId][key]||0;
+  const inp=document.getElementById('popup-amount');
+  inp.value=cur>0?cur:'';
+  inp.placeholder=serverMonthlyFee;
+
+  // Quick-amount buttons: 25%, 50%, 75%, מלא
+  const qb=document.getElementById('popup-quick-btns');
+  qb.innerHTML='';
+  [
+    {label:'25%', val:Math.round(serverMonthlyFee*0.25)},
+    {label:'50%', val:Math.round(serverMonthlyFee*0.5)},
+    {label:'75%', val:Math.round(serverMonthlyFee*0.75)},
+    {label:'מלא ✓', val:serverMonthlyFee}
+  ].forEach(({label,val})=>{
+    const b=document.createElement('button');
+    b.className='popup-quick-btn';
+    b.textContent=`${label} (₪${val})`;
+    b.onclick=()=>{ inp.value=val; inp.focus(); };
+    qb.appendChild(b);
+  });
+
+  // Position popup near cell, keep in viewport
   const popup=document.getElementById('partial-popup');
-  const rect=cell.getBoundingClientRect();
-  let top=rect.bottom+window.scrollY+6,left=rect.right-220;
-  if(left<8) left=8;
-  if(top+150>window.scrollY+window.innerHeight) top=rect.top+window.scrollY-156;
-  popup.style.top=top+'px';popup.style.left=left+'px';popup.style.right='auto';
   popup.classList.add('show');
   document.getElementById('popup-overlay').style.display='block';
-  setTimeout(()=>document.getElementById('popup-amount').focus(),50);
+
+  // Position after show so we can measure popup size
+  requestAnimationFrame(()=>{
+    const rect=cell.getBoundingClientRect();
+    const pw=popup.offsetWidth||300;
+    const ph=popup.offsetHeight||260;
+    let top=rect.bottom+window.scrollY+8;
+    let left=rect.left+window.scrollX;
+    // keep inside right edge
+    if(left+pw>window.innerWidth-8) left=window.innerWidth-pw-8;
+    if(left<8) left=8;
+    // flip above if not enough space below
+    if(rect.bottom+ph+8>window.innerHeight) top=rect.top+window.scrollY-ph-8;
+    popup.style.top=top+'px';
+    popup.style.left=left+'px';
+    popup.style.right='auto';
+    setTimeout(()=>inp.focus(),50);
+  });
 }
+
 function closePopup(){
   document.getElementById('partial-popup').classList.remove('show');
   document.getElementById('popup-overlay').style.display='none';
   popupCell=null;
 }
+
 document.getElementById('popup-save').addEventListener('click',()=>{
   if(!popupCell) return;
   const aptId=parseInt(popupCell.dataset.apt),key=popupCell.dataset.key;
-  const val=Math.min(parseInt(document.getElementById('popup-amount').value)||0,serverMonthlyFee);
+  const raw=document.getElementById('popup-amount').value;
+  const val=Math.min(Math.max(parseInt(raw)||0, 0), serverMonthlyFee);
   payments[aptId][key]=val;
-  refreshCell(popupCell,aptId,key);updateDebtCell(aptId);updateSummary();closePopup();
+  refreshCell(popupCell,aptId,key);
+  refreshMarkAllBtn(popupCell.closest('tr'),aptId,parseInt(popupCell.dataset.year),
+    parseInt(popupCell.dataset.year)<currentYear?12:currentMonth);
+  updateDebtCell(aptId);updateSummary();closePopup();
 });
+
 document.getElementById('popup-clear').addEventListener('click',()=>{
   if(!popupCell) return;
   const aptId=parseInt(popupCell.dataset.apt),key=popupCell.dataset.key;
-  payments[aptId][key]=0;refreshCell(popupCell,aptId,key);updateDebtCell(aptId);updateSummary();closePopup();
+  payments[aptId][key]=0;
+  refreshCell(popupCell,aptId,key);
+  refreshMarkAllBtn(popupCell.closest('tr'),aptId,parseInt(popupCell.dataset.year),
+    parseInt(popupCell.dataset.year)<currentYear?12:currentMonth);
+  updateDebtCell(aptId);updateSummary();closePopup();
 });
+
 document.getElementById('popup-cancel').addEventListener('click',closePopup);
 document.getElementById('popup-overlay').addEventListener('click',closePopup);
 document.getElementById('popup-amount').addEventListener('keydown',e=>{
