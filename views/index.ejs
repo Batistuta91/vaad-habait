@@ -136,7 +136,9 @@
         <div class="toggle-track"><div class="toggle-thumb"></div></div>
         <span id="theme-label">כהה</span>
       </button>
-      <a href="/admin">כניסת ועד →</a>
+      <button id="header-logout-btn" style="display:none;" class="btn btn-outline btn-sm" style="font-size:0.8rem;">
+        ↩ התנתק
+      </button>
     </nav>
   </div>
 </header>
@@ -543,6 +545,21 @@ function renderPersonal(apt){
   } else spSec.style.display='none';
 }
 
+function showHeaderLogout(show){
+  document.getElementById('header-logout-btn').style.display = show ? 'inline-flex' : 'none';
+}
+
+function doLogout(){
+  localStorage.removeItem('vaad_v2_apt');
+  localStorage.removeItem('vaad_v2_pass');
+  document.getElementById('personal-area').style.display='none';
+  document.getElementById('login-card').style.display='block';
+  document.getElementById('apt-select').value='';
+  document.getElementById('apt-password').value='';
+  showHeaderLogout(false);
+  showToast('יצאת מהמערכת');
+}
+
 // ── LOGIN TYPE TOGGLE ─────────────────────────────────────────────────────
 let loginType = 'tenant';
 function setLoginType(type){
@@ -591,6 +608,7 @@ async function doLogin(){
         localStorage.setItem('vaad_v2_pass', pass);
         document.getElementById('login-card').style.display='none';
         renderPersonal(d.apartment);
+        showHeaderLogout(true);
         showToast(`ברוך הבא, דירה ${aptId}!`);
       } else {
         errEl.style.display='block'; errEl.textContent=d.message||'שגיאה';
@@ -613,6 +631,7 @@ async function tryAutoLogin(){
       document.getElementById('apt-select').value=aptId;
       document.getElementById('login-card').style.display='none';
       renderPersonal(d.apartment);
+      showHeaderLogout(true);
     } else {
       localStorage.removeItem('vaad_v2_apt'); localStorage.removeItem('vaad_v2_pass');
     }
@@ -622,15 +641,8 @@ async function tryAutoLogin(){
 document.getElementById('login-btn').addEventListener('click', doLogin);
 document.getElementById('apt-password').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
 document.getElementById('admin-password').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
-
-document.getElementById('logout-btn').addEventListener('click',()=>{
-  localStorage.removeItem('vaad_v2_apt'); localStorage.removeItem('vaad_v2_pass');
-  document.getElementById('personal-area').style.display='none';
-  document.getElementById('login-card').style.display='block';
-  document.getElementById('apt-select').value='';
-  document.getElementById('apt-password').value='';
-  showToast('יצאת מהמערכת');
-});
+document.getElementById('logout-btn').addEventListener('click', doLogout);
+document.getElementById('header-logout-btn').addEventListener('click', doLogout);
 
 // ⚡ Run auto-login — uses NEW key only, so old sessions never fire
 tryAutoLogin();
