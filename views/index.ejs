@@ -239,6 +239,8 @@
       </span>
     </h2>
     <div class="card">
+
+      <!-- Summary: 4 cards including opening balance (balance = ALL time, not just 3 months) -->
       <div class="fin-summary" style="grid-template-columns:repeat(4,1fr);">
         <div class="fin-card">
           <div class="fin-val" style="color:var(--blue);">₪<%=openingBalance.toLocaleString()%></div>
@@ -259,17 +261,21 @@
           <div class="fin-lbl" style="font-weight:700;">יתרה נוכחית</div>
         </div>
       </div>
-      <div style="font-size:0.76rem;color:var(--text-dim);margin-bottom:16px;direction:rtl;">
-        יתרה נוכחית = יתרת פתיחה (₪<%=openingBalance.toLocaleString()%>) + הכנסות (₪<%=totalIncome.toLocaleString()%>) − הוצאות (₪<%=totalExpense.toLocaleString()%>)
-      </div>
+      <p style="font-size:0.74rem;color:var(--text-dim);margin:8px 0 16px;direction:rtl;">
+        * היתרה מחושבת על סך כל הפעולות. הטבלה מציגה 3 חודשים אחרונים בלבד.
+      </p>
 
+      <!-- Transactions — last 3 months, scrollable -->
       <% if(recentTx && recentTx.length > 0){ %>
-      <div style="font-size:0.8rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;">
-        פעולות אחרונות
+      <div style="display:flex;align-items:center;justify-content:space-between;margin:16px 0 10px;flex-wrap:wrap;gap:8px;">
+        <div style="font-size:0.8rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;">
+          פעולות — 3 חודשים אחרונים
+        </div>
+        <span class="badge badge-blue" style="font-size:0.72rem;"><%=recentTx.length%> פעולות</span>
       </div>
-      <div style="overflow-x:auto;">
-        <table class="tx-table">
-          <thead>
+      <div style="overflow-y:auto;max-height:280px;border-radius:var(--radius-sm);border:1px solid var(--border);">
+        <table class="tx-table" style="margin:0;">
+          <thead style="position:sticky;top:0;z-index:1;">
             <tr>
               <th>תאריך</th>
               <th>קטגוריה</th>
@@ -292,7 +298,9 @@
         </table>
       </div>
       <% } else { %>
-      <p class="text-muted" style="text-align:center;padding:20px 0;font-size:0.88rem;">טרם הוזנו פעולות פיננסיות</p>
+      <p class="text-muted" style="text-align:center;padding:24px 0;font-size:0.88rem;">
+        אין פעולות ב-3 החודשים האחרונים
+      </p>
       <% } %>
     </div>
   </section>
