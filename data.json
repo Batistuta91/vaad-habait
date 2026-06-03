@@ -1,59 +1,37 @@
 {
-  "settings": {
-    "buildingName": "ועד בית רחוב הדקל 5",
-    "adminPassword": "admin123",
-    "bankDetails": "בנק הפועלים | סניף 600 | חשבון 123456",
-    "payboxLink": "https://paybox.me/vaad",
-    "apartmentTypes": [
-      { "id": "apt3", "name": "דירת 3 חדרים", "monthlyFee": 250 },
-      { "id": "apt4", "name": "דירת 4 חדרים", "monthlyFee": 300 },
-      { "id": "apt5", "name": "דירת 5 חדרים", "monthlyFee": 350 },
-      { "id": "penthouse", "name": "פנטהאוז", "monthlyFee": 450 }
-    ],
-    "professions": [
-      { "id": "maintenance", "name": "אחזקה כללית" },
-      { "id": "elevator", "name": "מעלית" },
-      { "id": "electric", "name": "חשמל" },
-      { "id": "garden", "name": "גינון" },
-      { "id": "plumbing", "name": "אינסטלציה" },
-      { "id": "cleaning", "name": "ניקיון" }
-    ],
-    "workStatuses": [
-      { "id": "pending", "name": "לפני התחלה" },
-      { "id": "inprogress", "name": "בתהליך" },
-      { "id": "done", "name": "הסתיים" }
-    ],
-    "fees": [
-      { "id": "bank", "name": "עמלת בנק", "amount": 15 },
-      { "id": "returned_check", "name": "עמלת החזרת צ'ק", "amount": 50 }
-    ]
+  "buildingName": "בניין רמות 7",
+  "buildingAddress": "רחוב הרצל 7, רמות, ירושלים",
+  "monthlyFee": 350,
+  "bankDetails": {
+    "bank": "בנק לאומי",
+    "branch": "123",
+    "account": "12345678",
+    "beneficiary": "ועד הבית רמות 7"
   },
-  "residents": [
-    { "id": "apt1", "number": 1, "typeId": "apt3", "lastName": "כהן", "firstName": "יוסי", "phone": "050-1111111", "entryDate": "2020-01-01", "password": "1234", "isRental": false, "ownerName": "", "ownerPhone": "", "note": "" },
-    { "id": "apt2", "number": 2, "typeId": "apt4", "lastName": "לוי", "firstName": "רחל", "phone": "052-2222222", "entryDate": "2019-06-15", "password": "1234", "isRental": true, "ownerName": "אברהם לוי", "ownerPhone": "054-9999999", "note": "" },
-    { "id": "apt3", "number": 3, "typeId": "apt4", "lastName": "ישראלי", "firstName": "דנה", "phone": "053-3333333", "entryDate": "2021-03-10", "password": "1234", "isRental": false, "ownerName": "", "ownerPhone": "", "note": "" },
-    { "id": "apt4", "number": 4, "typeId": "apt3", "lastName": "גולן", "firstName": "מאיר", "phone": "050-4444444", "entryDate": "2018-11-20", "password": "1234", "isRental": false, "ownerName": "", "ownerPhone": "", "note": "" },
-    { "id": "apt5", "number": 5, "typeId": "apt5", "lastName": "פרץ", "firstName": "שרה", "phone": "052-5555555", "entryDate": "2022-01-01", "password": "1234", "isRental": false, "ownerName": "", "ownerPhone": "", "note": "" },
-    { "id": "apt6", "number": 6, "typeId": "apt4", "lastName": "אדלר", "firstName": "נועם", "phone": "054-6666666", "entryDate": "2017-08-01", "password": "1234", "isRental": false, "ownerName": "", "ownerPhone": "", "note": "" },
-    { "id": "apt7", "number": 7, "typeId": "apt3", "lastName": "ברק", "firstName": "יעל", "phone": "050-7777777", "entryDate": "2023-02-14", "password": "1234", "isRental": true, "ownerName": "שמעון ברק", "ownerPhone": "053-8888888", "note": "" },
-    { "id": "apt8", "number": 8, "typeId": "apt4", "lastName": "שפירא", "firstName": "אורן", "phone": "052-8888888", "entryDate": "2020-07-01", "password": "1234", "isRental": false, "ownerName": "", "ownerPhone": "", "note": "" },
-    { "id": "apt9", "number": 9, "typeId": "apt3", "lastName": "מזרחי", "firstName": "תמר", "phone": "054-9999999", "entryDate": "2019-12-01", "password": "1234", "isRental": false, "ownerName": "", "ownerPhone": "", "note": "" },
-    { "id": "apt10", "number": 10, "typeId": "apt5", "lastName": "אזולאי", "firstName": "דוד", "phone": "050-1010101", "entryDate": "2021-09-15", "password": "1234", "isRental": false, "ownerName": "", "ownerPhone": "", "note": "" },
-    { "id": "apt11", "number": 11, "typeId": "apt4", "lastName": "נחמן", "firstName": "ליאת", "phone": "052-1111112", "entryDate": "2020-04-01", "password": "1234", "isRental": false, "ownerName": "", "ownerPhone": "", "note": "" },
-    { "id": "apt12", "number": 12, "typeId": "apt3", "lastName": "הרשקוביץ", "firstName": "גל", "phone": "053-1212121", "entryDate": "2018-01-01", "password": "1234", "isRental": false, "ownerName": "", "ownerPhone": "", "note": "" },
-    { "id": "apt13", "number": 13, "typeId": "apt4", "lastName": "שמש", "firstName": "אמיר", "phone": "050-1313131", "entryDate": "2022-06-01", "password": "1234", "isRental": true, "ownerName": "דינה שמש", "ownerPhone": "054-1313131", "note": "" },
-    { "id": "apt14", "number": 14, "typeId": "apt3", "lastName": "בן-דוד", "firstName": "מיכל", "phone": "052-1414141", "entryDate": "2023-01-01", "password": "1234", "isRental": false, "ownerName": "", "ownerPhone": "", "note": "" },
-    { "id": "apt15", "number": 15, "typeId": "apt4", "lastName": "קלינגר", "firstName": "רון", "phone": "053-1515151", "entryDate": "2017-05-15", "password": "1234", "isRental": false, "ownerName": "", "ownerPhone": "", "note": "" },
-    { "id": "apt16", "number": 16, "typeId": "apt5", "lastName": "גרוס", "firstName": "נילי", "phone": "050-1616161", "entryDate": "2019-03-01", "password": "1234", "isRental": false, "ownerName": "", "ownerPhone": "", "note": "" },
-    { "id": "apt17", "number": 17, "typeId": "apt3", "lastName": "ויס", "firstName": "אלי", "phone": "052-1717171", "entryDate": "2021-11-01", "password": "1234", "isRental": false, "ownerName": "", "ownerPhone": "", "note": "" },
-    { "id": "apt18", "number": 18, "typeId": "apt4", "lastName": "טל", "firstName": "אורית", "phone": "054-1818181", "entryDate": "2020-08-01", "password": "1234", "isRental": false, "ownerName": "", "ownerPhone": "", "note": "" },
-    { "id": "apt19", "number": 19, "typeId": "apt3", "lastName": "שלום", "firstName": "ירון", "phone": "050-1919191", "entryDate": "2018-09-01", "password": "1234", "isRental": false, "ownerName": "", "ownerPhone": "", "note": "" },
-    { "id": "apt20", "number": 20, "typeId": "penthouse", "lastName": "רוזן", "firstName": "מנחם", "phone": "052-2020202", "entryDate": "2016-01-01", "password": "1234", "isRental": false, "ownerName": "", "ownerPhone": "", "note": "" }
+  "payboxLink": "https://payboxapp.page.link/xxxx",
+  "adminPassword": "vaad2024",
+  "years": [2025, 2026],
+  "apartments": [
+    { "id": 1,  "ownerName": "משפחת כהן",    "password": "1234", "payments": {}, "note": "תשלומים מעודכנים, תודה!" },
+    { "id": 2,  "ownerName": "משפחת לוי",    "password": "1234", "payments": {}, "note": "" },
+    { "id": 3,  "ownerName": "משפחת מזרחי",  "password": "1234", "payments": {}, "note": "" },
+    { "id": 4,  "ownerName": "משפחת פרץ",    "password": "1234", "payments": {}, "note": "" },
+    { "id": 5,  "ownerName": "משפחת ביטון",  "password": "1234", "payments": {}, "note": "" },
+    { "id": 6,  "ownerName": "משפחת אברהם",  "password": "1234", "payments": {}, "note": "" },
+    { "id": 7,  "ownerName": "משפחת שמעון",  "password": "1234", "payments": {}, "note": "" },
+    { "id": 8,  "ownerName": "משפחת דוד",    "password": "1234", "payments": {}, "note": "" },
+    { "id": 9,  "ownerName": "משפחת יוסף",   "password": "1234", "payments": {}, "note": "" },
+    { "id": 10, "ownerName": "משפחת יעקב",   "password": "1234", "payments": {}, "note": "" },
+    { "id": 11, "ownerName": "משפחת אליהו",  "password": "1234", "payments": {}, "note": "" },
+    { "id": 12, "ownerName": "משפחת משה",    "password": "1234", "payments": {}, "note": "" },
+    { "id": 13, "ownerName": "משפחת אהרון",  "password": "1234", "payments": {}, "note": "" },
+    { "id": 14, "ownerName": "משפחת שלמה",   "password": "1234", "payments": {}, "note": "" },
+    { "id": 15, "ownerName": "משפחת רחל",    "password": "1234", "payments": {}, "note": "" },
+    { "id": 16, "ownerName": "משפחת לאה",    "password": "1234", "payments": {}, "note": "" },
+    { "id": 17, "ownerName": "משפחת מרים",   "password": "1234", "payments": {}, "note": "" },
+    { "id": 18, "ownerName": "משפחת שרה",    "password": "1234", "payments": {}, "note": "" },
+    { "id": 19, "ownerName": "משפחת רבקה",   "password": "1234", "payments": {}, "note": "" },
+    { "id": 20, "ownerName": "משפחת דינה",   "password": "1234", "payments": {}, "note": "" }
   ],
-  "serviceTransactions": [],
-  "transactions": [],
-  "deferredChecks": [],
-  "oneTimeProjects": [],
-  "openingBalance": { "bank": 0, "cash": 0, "date": "" },
-  "externalIncome": []
+  "specialCharges": []
 }

@@ -3,269 +3,311 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><%= data.settings.buildingName %> – ממשק דיירים</title>
+  <title><%= buildingName %> — ועד בית</title>
   <link rel="stylesheet" href="/css/style.css">
-  <style>
-    .apt-row-debt { color: var(--danger); font-weight: 700; }
-    .apt-row-ok   { color: var(--success); font-weight: 600; }
-    .project-status { display: flex; gap: 6px; flex-wrap: wrap; }
-  </style>
 </head>
 <body>
 
 <header class="site-header">
   <div class="header-inner">
-    <a href="/" class="header-brand">
-      <span class="logo">🏠</span>
-      <div>
-        <h1><%= data.settings.buildingName %></h1>
-        <p>ממשק דיירים</p>
+    <div class="logo">
+      <div class="logo-icon">🏢</div>
+      <div class="logo-text">
+        <%= buildingName %>
+        <span><%= buildingAddress %></span>
       </div>
-    </a>
-    <div class="header-actions">
-      <button class="btn btn-secondary btn-sm" id="logoutBtn" style="display:none" onclick="logout()">יציאה</button>
-      <a href="/admin" class="btn btn-ghost btn-sm">ממשק מנהל →</a>
     </div>
+    <nav class="header-nav">
+      <a href="/admin">כניסת ועד →</a>
+    </nav>
   </div>
 </header>
 
-<!-- LOGIN STATE -->
-<div id="loginSection" class="login-screen">
-  <div class="login-card">
-    <div class="login-icon">🔑</div>
-    <h2>כניסה לאזור האישי</h2>
-    <p>הזן את מספר דירתך וסיסמה אישית</p>
-    <div class="form-group">
-      <label class="form-label">מספר דירה</label>
-      <input type="number" id="loginApt" class="form-control" placeholder="לדוגמה: 5" min="1" max="20">
-    </div>
-    <div class="form-group">
-      <input type="password" id="loginPass" class="form-control" placeholder="סיסמה">
-    </div>
-    <div id="loginError" class="alert alert-danger" style="display:none">מספר דירה או סיסמה שגויים</div>
-    <button class="btn btn-primary w-full btn-lg" onclick="doLogin()">כניסה לאזור האישי</button>
-    <div class="divider"></div>
-    <p class="text-sm text-muted">ניתן לגלול למטה לצפייה בטבלת השקיפות הציבורית</p>
-  </div>
+<div class="page-hero">
+  <h1>שקיפות <span>פיננסית</span> לכולם</h1>
+  <p>מצב חוב עדכני • היסטוריית תשלומים • תשלום נוח</p>
 </div>
 
-<!-- PERSONAL AREA (shown after login) -->
-<div id="personalSection" style="display:none">
-  <div class="container" style="padding-top:24px; padding-bottom:24px;">
-    <div class="personal-area">
-      <div class="flex-between" style="flex-wrap:wrap; gap:12px;">
-        <div>
-          <h2 id="welcomeText">שלום!</h2>
-          <p id="aptTypeText"></p>
+<main class="container" style="padding-bottom:80px;">
+
+  <!-- ══ LOGIN ══════════════════════════════════════════════════════════ -->
+  <section class="section">
+    <h2 class="section-title">כניסה לאזור האישי שלך</h2>
+    <div class="login-card" id="login-card">
+      <div class="login-row">
+        <div class="form-group">
+          <label for="apt-select">מספר דירה</label>
+          <select id="apt-select">
+            <option value="">— בחר דירה —</option>
+            <% for (let i=1;i<=20;i++) { %><option value="<%= i %>">דירה <%= i %></option><% } %>
+          </select>
         </div>
-        <button class="btn" style="background:rgba(255,255,255,0.2);color:white;" onclick="logout()">🚪 יציאה</button>
-      </div>
-      <div class="balance-display">
-        <div>
-          <div style="font-size:0.8rem;color:rgba(255,255,255,0.75);margin-bottom:2px;">מצב חשבון</div>
-          <div class="amount" id="balanceAmount">₪0</div>
+        <div class="form-group">
+          <label for="apt-password">סיסמה</label>
+          <input type="password" id="apt-password" placeholder="הזן סיסמה">
         </div>
-        <div id="balanceStatus" style="font-size:0.85rem;color:rgba(255,255,255,0.85);"></div>
-      </div>
-    </div>
-
-    <!-- Note from committee -->
-    <div id="noteCard" class="card mb-2" style="display:none;">
-      <div class="card-title">💬 הודעה מהוועד</div>
-      <p id="noteText" style="margin-top:8px;"></p>
-    </div>
-
-    <!-- Payment info -->
-    <div class="card mb-2">
-      <div class="card-title mb-2">💳 תשלום דמי ועד</div>
-      <div class="pay-info-box">
-        <div>
-          <div class="text-sm text-muted mb-1">פרטי חשבון בנק</div>
-          <div id="bankDetailsText" style="font-weight:600;"><%= data.settings.bankDetails %></div>
+        <div class="form-group" style="flex:none;">
+          <label style="visibility:hidden;">כניסה</label>
+          <button class="btn btn-primary" id="login-btn">כניסה</button>
         </div>
-        <button class="copy-btn" onclick="copyText('<%= data.settings.bankDetails %>')">📋 העתק</button>
       </div>
-      <% if (data.settings.payboxLink) { %>
-      <div class="mt-2" style="display:flex;gap:8px;flex-wrap:wrap;">
-        <a href="<%= data.settings.payboxLink %>" target="_blank" class="btn btn-warning">📱 תשלום בPaybox</a>
-        <button class="btn btn-secondary" onclick="copyText('<%= data.settings.payboxLink %>')">🔗 העתק קישור</button>
+      <div id="login-error" class="form-error" style="display:none;"></div>
+    </div>
+
+    <!-- PERSONAL AREA -->
+    <div id="personal-area" style="display:none;" class="mt-16">
+
+      <!-- top bar -->
+      <div class="personal-card">
+        <div class="apt-badge" id="pa-num">?</div>
+        <div class="personal-info">
+          <div class="apt-label" id="pa-owner"></div>
+          <div id="pa-debt-badge" class="debt-badge zero mt-8">✓ אין חוב</div>
+          <div class="debt-breakdown mt-8" id="pa-breakdown" style="display:none;font-size:0.82rem;color:var(--text-muted);"></div>
+          <div class="apt-note mt-12" id="pa-note" style="display:none;"></div>
+        </div>
+        <button class="btn btn-ghost btn-sm" id="logout-btn">↩ יציאה</button>
       </div>
-      <% } %>
-    </div>
 
-    <!-- Monthly fee reminder -->
-    <div class="card mb-3">
-      <div class="card-title mb-2">📅 תשלום חודשי</div>
-      <div id="monthlyFeeInfo" class="text-sm text-muted"></div>
-    </div>
-  </div>
-</div>
+      <!-- monthly history -->
+      <div class="card mt-16">
+        <h3 class="section-title" style="font-size:1rem;">היסטוריית תשלומים חודשיים</h3>
+        <div id="pa-monthly-grid" class="monthly-grid"></div>
+      </div>
 
-<!-- PUBLIC TRANSPARENCY TABLE -->
-<div class="container" style="padding-bottom:40px;">
-  <div class="card">
-    <div class="card-header">
-      <div class="card-title">📊 טבלת שקיפות כספית – כלל הדירות</div>
-    </div>
-    <div id="transparencyContent">
-      <div class="empty-state"><div class="empty-icon">⏳</div><p>טוען נתונים...</p></div>
-    </div>
-  </div>
-</div>
+      <!-- special charges for this apt -->
+      <div id="pa-special-section" style="display:none;" class="card mt-16">
+        <h3 class="section-title" style="font-size:1rem;">גביות מיוחדות</h3>
+        <div id="pa-special-list"></div>
+      </div>
 
-<div id="toast-container"></div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ══ PUBLIC TABLE ════════════════════════════════════════════════════ -->
+  <section class="section">
+    <h2 class="section-title">
+      שקיפות ציבורית — סטטוס כל הדירות
+      <span class="badge badge-gold" style="margin-right:auto;">מידע עדכני</span>
+    </h2>
+    <div class="card">
+      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;font-size:0.82rem;">
+        <span style="color:var(--green);">● ירוק = ללא חוב</span>
+        <span style="color:var(--red);">● אדום = יש חוב</span>
+        <span class="text-muted" style="margin-right:auto;">מספרי דירות בלבד, ללא פרטים אישיים</span>
+      </div>
+      <div class="apartments-grid">
+        <% publicApartments.forEach(apt => { %>
+        <div class="apt-tile <%= apt.debt===0?'clear':'owed' %>">
+          <div class="apt-num">דירה <%= apt.id %></div>
+          <div class="apt-debt"><%= apt.debt===0 ? '✓ שולם' : '₪'+apt.debt.toLocaleString() %></div>
+        </div>
+        <% }) %>
+      </div>
+      <div class="mt-16 text-muted text-small" style="display:flex;gap:20px;flex-wrap:wrap;">
+        <span>ללא חוב: <strong style="color:var(--green);"><%= publicApartments.filter(a=>a.debt===0).length %></strong></span>
+        <span>עם חוב: <strong style="color:var(--red);"><%= publicApartments.filter(a=>a.debt>0).length %></strong></span>
+        <span>חוב כולל: <strong style="color:var(--gold);">₪<%= publicApartments.reduce((s,a)=>s+a.debt,0).toLocaleString() %></strong></span>
+      </div>
+    </div>
+  </section>
+
+  <% if (specialCharges && specialCharges.length > 0) { %>
+  <div class="divider"></div>
+  <!-- ══ SPECIAL CHARGES PUBLIC ══════════════════════════════════════════ -->
+  <section class="section">
+    <h2 class="section-title">גביות מיוחדות</h2>
+    <% specialCharges.forEach(sc => {
+      const paid = sc.apartments.filter(a=>a.paid).length;
+      const pct  = Math.round(paid/20*100);
+    %>
+    <div class="project-card">
+      <div class="project-header">
+        <div class="project-meta">
+          <h3><%= sc.name %></h3>
+          <% if(sc.description){ %><p><%= sc.description %></p><% } %>
+          <% if(sc.date){ %><p style="color:var(--text-dim);font-size:0.8rem;">תאריך: <%= sc.date %></p><% } %>
+        </div>
+        <div class="project-stats">
+          <div class="project-stat"><div class="stat-val">₪<%= sc.costPerApartment.toLocaleString() %></div><div class="stat-lbl">לדירה</div></div>
+          <div class="project-stat"><div class="stat-val" style="color:var(--green);"><%= paid %>/20</div><div class="stat-lbl">שילמו</div></div>
+          <div class="project-stat"><div class="stat-val" style="color:<%= pct>=80?'var(--green)':'var(--gold)' %>"><%= pct %>%</div><div class="stat-lbl">גבייה</div></div>
+        </div>
+      </div>
+      <div class="project-progress">
+        <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:<%= pct %>%"></div></div>
+        <div class="progress-label"><span>התקדמות</span><span><%= paid %>/20</span></div>
+      </div>
+      <div class="chips-grid">
+        <% for(let i=1;i<=20;i++){
+          const isPaid=sc.apartments.find(a=>a.id===i&&a.paid); %>
+        <div class="chip <%= isPaid?'paid':'unpaid' %>"><%= isPaid?'✓':'✗' %> דירה <%= i %></div>
+        <% } %>
+      </div>
+    </div>
+    <% }) %>
+  </section>
+  <% } %>
+
+  <div class="divider"></div>
+
+  <!-- ══ PAYMENT ════════════════════════════════════════════════════════ -->
+  <section class="section">
+    <h2 class="section-title">תשלום מהיר לוועד הבית</h2>
+    <div class="card">
+      <div class="payment-section">
+        <div class="bank-detail-box">
+          <div style="font-size:0.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:12px;">פרטי בנק</div>
+          <% [['בנק',bankDetails.bank],['סניף',bankDetails.branch],['חשבון',bankDetails.account],['שם',bankDetails.beneficiary]].forEach(([l,v])=>{ %>
+          <div class="bank-row"><span class="bank-label"><%= l %></span><span class="bank-val"><%= v %></span></div>
+          <% }) %>
+        </div>
+        <div class="payment-actions">
+          <button class="btn btn-primary" id="copy-bank-btn">📋 העתק פרטי בנק</button>
+          <a href="<%= payboxLink %>" target="_blank" rel="noopener" class="btn btn-outline">💳 תשלום בPayBox</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<div class="toast" id="toast"></div>
 
 <script>
-const appData = <%- JSON.stringify(data) %>;
-let currentResident = null;
+const bankDetails = <%- JSON.stringify(bankDetails) %>;
 
-// ── Auth ──────────────────────────────────────────────────────
-function doLogin() {
-  const aptNumber = document.getElementById('loginApt').value;
-  const password  = document.getElementById('loginPass').value;
-  fetch('/api/auth/resident', {
-    method: 'POST', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ aptNumber, password })
-  }).then(r => r.json()).then(res => {
-    if (res.error) {
-      document.getElementById('loginError').style.display = 'flex';
-    } else {
-      localStorage.setItem('residentSession', JSON.stringify(res.resident));
-      showPersonalArea(res.resident);
-    }
-  }).catch(() => showToast('שגיאת תקשורת', 'error'));
+function showToast(msg,type='success'){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className=`toast show ${type}`;
+  setTimeout(()=>{t.className='toast';},3200);
 }
 
-function logout() {
-  localStorage.removeItem('residentSession');
-  currentResident = null;
-  document.getElementById('loginSection').style.display = 'flex';
-  document.getElementById('personalSection').style.display = 'none';
-  document.getElementById('logoutBtn').style.display = 'none';
-  document.getElementById('loginApt').value = '';
-  document.getElementById('loginPass').value = '';
-}
+// ── AUTH ──────────────────────────────────────────────────────────────────
+function renderPersonal(apt){
+  document.getElementById('personal-area').style.display='block';
+  document.getElementById('pa-num').textContent = apt.id;
+  document.getElementById('pa-owner').textContent = apt.ownerName || `דירה ${apt.id}`;
 
-function showPersonalArea(resident) {
-  currentResident = resident;
-  document.getElementById('loginSection').style.display = 'none';
-  document.getElementById('personalSection').style.display = 'block';
-  document.getElementById('logoutBtn').style.display = 'inline-flex';
-
-  document.getElementById('welcomeText').textContent = `שלום, ${resident.firstName} ${resident.lastName} (דירה ${resident.number})`;
-  const aptType = appData.settings.apartmentTypes.find(t => t.id === resident.typeId);
-  document.getElementById('aptTypeText').textContent = aptType ? `${aptType.name} | דמי ועד: ₪${aptType.monthlyFee}/חודש` : '';
-  document.getElementById('monthlyFeeInfo').textContent = aptType ? `דמי הוועד החודשיים לדירתך: ₪${aptType.monthlyFee}` : '';
-
-  // Calculate balance
-  const balance = calcResidentBalance(resident);
-  const el = document.getElementById('balanceAmount');
-  const statusEl = document.getElementById('balanceStatus');
-  el.textContent = `₪${Math.abs(balance).toLocaleString()}`;
-  if (balance < 0) {
-    el.className = 'amount debt';
-    statusEl.textContent = '⚠️ יתרת חוב – יש לשלם';
-  } else if (balance > 0) {
-    el.className = 'amount ok';
-    statusEl.textContent = '✅ שילמת מראש';
+  const badge = document.getElementById('pa-debt-badge');
+  if(apt.debt===0){
+    badge.className='debt-badge zero mt-8';
+    badge.innerHTML='✓ אין חוב — הכל מסודר';
   } else {
-    el.className = 'amount ok';
-    statusEl.textContent = '✅ מעודכן';
+    badge.className='debt-badge has-debt mt-8';
+    badge.innerHTML=`⚠ חוב כולל: ₪${apt.debt.toLocaleString()}`;
   }
 
-  if (resident.note) {
-    document.getElementById('noteCard').style.display = 'block';
-    document.getElementById('noteText').textContent = resident.note;
-  }
-}
-
-function calcResidentBalance(resident) {
-  const aptType = appData.settings.apartmentTypes.find(t => t.id === resident.typeId);
-  const monthly = aptType ? aptType.monthlyFee : 0;
-
-  // Find all regular income transactions for this apartment
-  const income = appData.transactions
-    .filter(t => String(t.aptNumber) === String(resident.number) && t.type === 'income' && !t.canceled)
-    .reduce((s, t) => s + Number(t.amount), 0);
-
-  // Deferred checks received
-  const deferred = appData.deferredChecks
-    .filter(d => String(d.aptNumber) === String(resident.number) && d.cashed)
-    .reduce((s, d) => s + Number(d.amount), 0);
-
-  // Months owed: from entry date to now
-  const entry = new Date(resident.entryDate || '2020-01-01');
-  const now = new Date();
-  const months = (now.getFullYear() - entry.getFullYear()) * 12 + (now.getMonth() - entry.getMonth()) + 1;
-  const totalOwed = months * monthly;
-
-  // Paid = income + deferred cashed
-  const totalPaid = income + deferred;
-  return totalPaid - totalOwed;
-}
-
-// ── Transparency Table ─────────────────────────────────────────
-function buildTransparencyTable() {
-  const container = document.getElementById('transparencyContent');
-  const residents = appData.residents.sort((a,b) => a.number - b.number);
-  const projects = appData.oneTimeProjects;
-
-  if (!residents.length) {
-    container.innerHTML = '<div class="empty-state"><div class="empty-icon">🏠</div><p>אין דיירים רשומים</p></div>';
-    return;
+  const breakdown = document.getElementById('pa-breakdown');
+  if(apt.debt>0){
+    let parts=[];
+    if(apt.monthlyDebt>0) parts.push(`ועד חודשי: ₪${apt.monthlyDebt.toLocaleString()}`);
+    if(apt.specialDebt>0) parts.push(`גביות מיוחדות: ₪${apt.specialDebt.toLocaleString()}`);
+    breakdown.textContent = parts.join(' | ');
+    breakdown.style.display='block';
+  } else {
+    breakdown.style.display='none';
   }
 
-  let html = '<div class="table-wrap"><table><thead><tr>';
-  html += '<th>דירה</th><th>מצב חשבון שוטף</th>';
-  projects.forEach(p => { html += `<th>${p.name}</th>`; });
-  html += '</tr></thead><tbody>';
+  const noteEl = document.getElementById('pa-note');
+  if(apt.note){ noteEl.textContent=apt.note; noteEl.style.display='block'; }
+  else noteEl.style.display='none';
 
-  residents.forEach(r => {
-    const balance = calcResidentBalance(r);
-    const balClass = balance < 0 ? 'apt-row-debt' : 'apt-row-ok';
-    const balText = balance < 0 ? `חוב: ₪${Math.abs(balance).toLocaleString()}` : balance === 0 ? '✅ מעודכן' : `✅ ₪${balance.toLocaleString()} זכות`;
-
-    html += `<tr><td><strong>דירה ${r.number}</strong></td><td class="${balClass}">${balText}</td>`;
-    projects.forEach(p => {
-      const paid = p.paidStatus && p.paidStatus[r.id];
-      html += `<td><span class="badge ${paid ? 'badge-success' : 'badge-danger'}">${paid ? '✅ שילם' : '❌ לא שילם'}</span></td>`;
-    });
-    html += '</tr>';
+  // Monthly grid
+  const grid = document.getElementById('pa-monthly-grid');
+  grid.innerHTML='';
+  let yearGroup='';
+  apt.monthlyStatus.forEach(m=>{
+    if(m.year!==yearGroup){
+      if(yearGroup) grid.insertAdjacentHTML('beforeend','</div>');
+      grid.insertAdjacentHTML('beforeend',`<div class="year-label">${m.year}</div><div class="month-row">`);
+      yearGroup=m.year;
+    }
+    grid.insertAdjacentHTML('beforeend',`
+      <div class="month-chip ${m.paid?'paid':'unpaid'}" title="${m.label}">
+        <span class="month-icon">${m.paid?'✓':'✗'}</span>
+        <span class="month-name">${m.label.split(' ')[0]}</span>
+      </div>`);
   });
+  if(yearGroup) grid.insertAdjacentHTML('beforeend','</div>');
 
-  html += '</tbody></table></div>';
-  container.innerHTML = html;
+  // Special charges
+  const spSec  = document.getElementById('pa-special-section');
+  const spList = document.getElementById('pa-special-list');
+  spList.innerHTML='';
+  if(apt.specialCharges && apt.specialCharges.length>0){
+    spSec.style.display='block';
+    apt.specialCharges.forEach(sc=>{
+      spList.insertAdjacentHTML('beforeend',`
+        <div class="special-row ${sc.paid?'paid':'unpaid'}">
+          <div>
+            <strong>${sc.name}</strong>
+            ${sc.description?`<span class="text-muted"> — ${sc.description}</span>`:''}
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
+            <span style="font-weight:700;">₪${sc.costPerApartment.toLocaleString()}</span>
+            <span class="chip ${sc.paid?'paid':'unpaid'}">${sc.paid?'✓ שולם':'✗ לא שולם'}</span>
+          </div>
+        </div>`);
+    });
+  } else {
+    spSec.style.display='none';
+  }
 }
 
-// ── Utils ─────────────────────────────────────────────────────
-function copyText(text) {
-  navigator.clipboard.writeText(text).then(() => showToast('הועתק ללוח!', 'success'));
+async function doLogin(){
+  const aptId=document.getElementById('apt-select').value;
+  const pass =document.getElementById('apt-password').value;
+  const errEl=document.getElementById('login-error');
+  if(!aptId||!pass){ errEl.style.display='block'; errEl.textContent='אנא בחר דירה והזן סיסמה.'; return; }
+  const btn=document.getElementById('login-btn');
+  btn.disabled=true; btn.textContent='...';
+  try{
+    const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({apartmentId:aptId,password:pass})});
+    const d=await r.json();
+    if(d.success){
+      errEl.style.display='none';
+      localStorage.setItem('vaad_apt',aptId);
+      localStorage.setItem('vaad_pass',pass);
+      renderPersonal(d.apartment);
+      showToast(`ברוך הבא, דירה ${aptId}!`);
+    } else {
+      errEl.style.display='block'; errEl.textContent=d.message||'שגיאה';
+    }
+  }catch(e){ errEl.style.display='block'; errEl.textContent='שגיאת רשת'; }
+  finally{ btn.disabled=false; btn.textContent='כניסה'; }
 }
 
-function showToast(msg, type = 'success') {
-  const c = document.getElementById('toast-container');
-  const t = document.createElement('div');
-  t.className = `toast toast-${type}`;
-  t.textContent = msg;
-  c.appendChild(t);
-  setTimeout(() => t.remove(), 3100);
+async function tryAutoLogin(){
+  const aptId=localStorage.getItem('vaad_apt');
+  const pass =localStorage.getItem('vaad_pass');
+  if(!aptId||!pass) return;
+  try{
+    const r=await fetch('/api/apartment-status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({apartmentId:aptId,password:pass})});
+    const d=await r.json();
+    if(d.success){ document.getElementById('apt-select').value=aptId; renderPersonal(d.apartment); }
+    else{ localStorage.removeItem('vaad_apt'); localStorage.removeItem('vaad_pass'); }
+  }catch(e){}
 }
 
-document.getElementById('loginApt').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('loginPass').focus(); });
-document.getElementById('loginPass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+document.getElementById('login-btn').addEventListener('click',doLogin);
+document.getElementById('apt-password').addEventListener('keydown',e=>{ if(e.key==='Enter') doLogin(); });
+document.getElementById('logout-btn').addEventListener('click',()=>{
+  localStorage.removeItem('vaad_apt'); localStorage.removeItem('vaad_pass');
+  document.getElementById('personal-area').style.display='none';
+  document.getElementById('apt-select').value='';
+  document.getElementById('apt-password').value='';
+  showToast('יצאת מהמערכת');
+});
 
-// Auto-login from localStorage
-const saved = localStorage.getItem('residentSession');
-if (saved) {
-  try {
-    const r = JSON.parse(saved);
-    // Re-verify against current data
-    const found = appData.residents.find(res => res.id === r.id && res.password === r.password);
-    if (found) showPersonalArea(found);
-  } catch(e) { localStorage.removeItem('residentSession'); }
-}
+tryAutoLogin();
 
-buildTransparencyTable();
+document.getElementById('copy-bank-btn').addEventListener('click',()=>{
+  const txt=`פרטי בנק ועד הבית\nבנק: ${bankDetails.bank}\nסניף: ${bankDetails.branch}\nחשבון: ${bankDetails.account}\nשם: ${bankDetails.beneficiary}`;
+  navigator.clipboard.writeText(txt).then(()=>showToast('פרטי הבנק הועתקו ✓')).catch(()=>showToast('העתק ידנית','error'));
+});
 </script>
 </body>
 </html>
