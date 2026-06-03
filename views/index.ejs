@@ -249,6 +249,16 @@
         <h3 class="section-title" style="font-size:1rem;">גביות מיוחדות</h3>
         <div id="pa-special-list"></div>
       </div>
+
+      <!-- PHONEBOOK -->
+      <div class="card mt-16" id="pa-phonebook-section" style="display:none;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
+          <h3 class="section-title" style="font-size:1rem;margin-bottom:0;">📞 ספר טלפונים — דיירי הבניין</h3>
+          <button class="btn btn-outline btn-sm" id="print-phonebook-btn">🖨️ הדפסה</button>
+        </div>
+        <div id="pa-phonebook-list"></div>
+      </div>
+
     </div>
   </section>
 
@@ -556,6 +566,8 @@ function doLogout(){
   document.getElementById('login-card').style.display='block';
   document.getElementById('apt-select').value='';
   document.getElementById('apt-password').value='';
+  document.getElementById('pa-phonebook-section').style.display='none';
+  document.getElementById('pa-phonebook-list').innerHTML='';
   showHeaderLogout(false);
   showToast('יצאת מהמערכת');
 }
@@ -610,6 +622,7 @@ async function doLogin(){
         localStorage.setItem('vaad_v2_pass', pass);
         document.getElementById('login-card').style.display='none';
         renderPersonal(d.apartment);
+        loadPhonebook(aptId, pass);
         showHeaderLogout(true);
         showToast(`ברוך הבא, דירה ${aptId}!`);
       } else {
@@ -633,6 +646,7 @@ async function tryAutoLogin(){
       document.getElementById('apt-select').value=aptId;
       document.getElementById('login-card').style.display='none';
       renderPersonal(d.apartment);
+      loadPhonebook(aptId, pass);
       showHeaderLogout(true);
     } else {
       localStorage.removeItem('vaad_v2_apt'); localStorage.removeItem('vaad_v2_pass');
@@ -649,7 +663,85 @@ document.getElementById('header-logout-btn').addEventListener('click', doLogout)
 // ⚡ Run auto-login — uses NEW key only, so old sessions never fire
 tryAutoLogin();
 
-// ── COPY BANK ────────────────────────────────────────────────────────────
+// ── PHONEBOOK ─────────────────────────────────────────────────────────────
+async function loadPhonebook(aptId, pass){
+  try{
+    const r = await fetch('/api/phonebook',{method:'POST',headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({apartmentId: aptId, password: pass})});
+    const d = await r.json();
+    if(!d.success || !d.phonebook.length) return;
+
+    const sec  = document.getElementById('pa-phonebook-section');
+    const list = document.getElementById('pa-phonebook-list');
+    sec.style.display = 'block';
+    list.innerHTML = '';
+
+    d.phonebook.forEach(apt=>{
+      const name = apt.ownerType==='tenant' && apt.tenantName
+        ? `${apt.ownerName} <span style="color:var(--text-muted);font-size:0.8rem;">(שוכר: ${apt.tenantName})</span>`
+        : apt.ownerName || `דירה ${apt.id}`;
+      const phone = apt.phone
+        ? `<a href="tel:${apt.phone}" style="color:var(--blue);font-weight:700;text-decoration:none;">${apt.phone}</a>`
+        : '<span style="color:var(--text-dim);font-size:0.82rem;">אין טלפון</span>';
+      list.insertAdjacentHTML('beforeend',`
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;
+             border-bottom:1px solid var(--border);gap:12px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="background:var(--bg2);border:1px solid var(--border);border-radius:6px;
+                  width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;
+                  font-size:0.78rem;font-weight:700;color:var(--text-muted);flex-shrink:0;">${apt.id}</span>
+            <span>${name}</span>
+          </div>
+          <span>${phone}</span>
+        </div>`);
+    });
+
+    // last row no border
+    const rows = list.querySelectorAll('div');
+    if(rows.length) rows[rows.length-1].style.borderBottom='none';
+
+  }catch(e){}
+}
+
+document.getElementById('print-phonebook-btn').addEventListener('click',()=>{
+  const list = document.getElementById('pa-phonebook-list');
+  const win  = window.open('','_blank','width=600,height=800');
+  const dir  = document.documentElement.getAttribute('dir')||'rtl';
+  win.document.write(`<!DOCTYPE html><html dir="${dir}"><head>
+    <meta charset="UTF-8">
+    <title>ספר טלפונים — <%=buildingName%></title>
+    <style>
+      body{font-family:Arial,sans-serif;direction:rtl;padding:24px;color:#111;}
+      h2{font-size:1.2rem;margin-bottom:4px;}
+      p{color:#666;font-size:0.85rem;margin-bottom:20px;}
+      table{width:100%;border-collapse:collapse;font-size:0.9rem;}
+      th{background:#f0f0f0;padding:9px 12px;text-align:right;border-bottom:2px solid #ddd;}
+      td{padding:8px 12px;border-bottom:1px solid #eee;}
+      a{color:#333;text-decoration:none;}
+      @media print{@page{margin:15mm;}}
+    </style>
+  </head><body>
+    <h2>📞 ספר טלפונים — <%=buildingName%></h2>
+    <p><%=buildingAddress%></p>
+    <table>
+      <thead><tr><th>#</th><th>שם</th><th>טלפון</th></tr></thead>
+      <tbody>`);
+  document.querySelectorAll('#pa-phonebook-list > div').forEach(row=>{
+    const cells = row.querySelectorAll('div,span');
+    const numEl  = row.querySelector('span[style*="width:32px"]');
+    const nameEl = row.querySelectorAll('div > span')[1];
+    const phoneEl= row.querySelectorAll('div + span')[0] || row.querySelector('a');
+    const num   = numEl   ? numEl.textContent.trim()   : '';
+    const name  = nameEl  ? nameEl.textContent.trim()  : '';
+    const phone = phoneEl ? phoneEl.textContent.trim() : '';
+    win.document.write(`<tr><td>${num}</td><td>${name}</td><td><a href="tel:${phone}">${phone||'—'}</a></td></tr>`);
+  });
+  win.document.write(`</tbody></table><p style="margin-top:20px;font-size:0.75rem;color:#999;">
+    הודפס: ${new Date().toLocaleDateString('he-IL')}</p></body></html>`);
+  win.document.close();
+  win.focus();
+  setTimeout(()=>win.print(), 400);
+});
 document.getElementById('copy-bank-btn').addEventListener('click',()=>{
   const txt=`פרטי בנק ועד הבית\nבנק: ${bankDetails.bank}\nסניף: ${bankDetails.branch}\nחשבון: ${bankDetails.account}\nשם: ${bankDetails.beneficiary}`;
   navigator.clipboard.writeText(txt).then(()=>showToast('פרטי הבנק הועתקו ✓')).catch(()=>showToast('העתק ידנית','error'));

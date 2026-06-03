@@ -70,13 +70,14 @@
 
   /* APT TABLE v2 */
   .apt-table-wrap{overflow-x:auto;}
-  .apt-grid-v2{display:grid;grid-template-columns:40px 110px 1fr 1fr 130px 110px 1fr 90px;gap:8px;align-items:center;padding:9px 12px;border-bottom:1px solid var(--border);}
+  .apt-grid-v2{display:grid;grid-template-columns:40px 110px 1fr 1fr 130px 130px 110px 1fr 90px;gap:8px;align-items:center;padding:9px 12px;border-bottom:1px solid var(--border);}
   .apt-grid-v2.hdr{background:var(--bg);color:var(--text-muted);font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;border-radius:var(--radius-sm) var(--radius-sm) 0 0;}
   .apt-grid-v2:not(.hdr):hover{background:rgba(255,255,255,0.02);}
   .apt-grid-v2 input,.apt-grid-v2 select{background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'Heebo',sans-serif;font-size:0.84rem;padding:7px 10px;width:100%;direction:rtl;transition:var(--transition);}
   .apt-grid-v2 input:focus,.apt-grid-v2 select:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 2px var(--gold-dim);}
   .apt-grid-v2 .tenant-field-wrap.active input{border-color:rgba(245,158,11,0.5)!important;background:rgba(245,158,11,0.06)!important;}
-  @media(max-width:1000px){.apt-grid-v2{grid-template-columns:36px 100px 1fr 1fr 1fr;}.apt-grid-v2 .col-pw,.apt-grid-v2 .col-status{display:none;}.apt-grid-v2.hdr .col-pw,.apt-grid-v2.hdr .col-status{display:none;}}
+  @media(max-width:1100px){.apt-grid-v2{grid-template-columns:36px 100px 1fr 1fr 130px 1fr;}.apt-grid-v2 .col-pw,.apt-grid-v2 .col-status{display:none;}.apt-grid-v2.hdr .col-pw,.apt-grid-v2.hdr .col-status{display:none;}}
+  @media(max-width:800px){.apt-grid-v2{grid-template-columns:36px 100px 1fr 1fr;}.apt-grid-v2 .col-pw,.apt-grid-v2 .col-status{display:none;}.apt-grid-v2.hdr .col-pw,.apt-grid-v2.hdr .col-status{display:none;}}
   @media(max-width:680px){.apt-grid-v2{grid-template-columns:32px 90px 1fr 1fr;}.apt-grid-v2 .col-pass,.apt-grid-v2 .col-note{display:none;}.apt-grid-v2.hdr .col-pass,.apt-grid-v2.hdr .col-note{display:none;}}
   @media(max-width:480px){.apt-grid-v2{grid-template-columns:28px 80px 1fr;}.apt-grid-v2 .col-tenant{display:none;}.apt-grid-v2.hdr .col-tenant{display:none;}}
 
@@ -290,6 +291,7 @@
             <div>סוג</div>
             <div>שם בעל הדירה</div>
             <div class="col-tenant">שם השוכר</div>
+            <div class="col-phone">טלפון</div>
             <div class="col-pass">סיסמה חדשה</div>
             <div class="col-pw">סיסמה</div>
             <div class="col-note">הערה</div>
@@ -314,6 +316,11 @@
             <!-- tenant name — shown only when type=tenant -->
             <div class="col-tenant tenant-field-wrap" style="<%=(apt.ownerType||'owner')==='tenant'?'':'opacity:0.3;pointer-events:none;'%>">
               <input type="text" class="tenant-input" value="<%=apt.tenantName||''%>" placeholder="שם השוכר" style="<%=(apt.ownerType||'owner')==='tenant'?'border-color:rgba(245,158,11,0.5);':''%>">
+            </div>
+
+            <!-- phone -->
+            <div class="col-phone">
+              <input type="tel" class="phone-input" value="<%=apt.phone||''%>" placeholder="05X-XXXXXXX" dir="ltr" style="text-align:right;">
             </div>
 
             <!-- new password -->
@@ -1082,6 +1089,7 @@ async function saveAll(){
     const pv=row.querySelector('.pass-input')?row.querySelector('.pass-input').value:'';
     apartments.push({id,
       ownerName:  row.querySelector('.owner-input').value||'',
+      phone:      row.querySelector('.phone-input')?row.querySelector('.phone-input').value||'':'',
       ownerType:  row.querySelector('.type-select').value||'owner',
       tenantName: row.querySelector('.tenant-input')?row.querySelector('.tenant-input').value||'':'',
       note:       row.querySelector('.note-input')?row.querySelector('.note-input').value||'':'',

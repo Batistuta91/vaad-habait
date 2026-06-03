@@ -87,7 +87,14 @@ app.get('/', (req, res) => {
   const totalIncome   = transactions.filter(t=>t.type==='income').reduce((s,t)=>s+(t.amount||0),0);
   const totalExpense  = transactions.filter(t=>t.type==='expense').reduce((s,t)=>s+(t.amount||0),0);
   const balance       = openingBalance + totalIncome - totalExpense;
-  const recentTx      = [...transactions].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,10);
+  // 3 months ago cutoff for tenant view
+  const cutoff = new Date();
+  cutoff.setMonth(cutoff.getMonth() - 3);
+  const cutoffStr = cutoff.toISOString().slice(0, 10); // YYYY-MM-DD
+
+  const recentTx = [...transactions]
+    .filter(t => !t.date || t.date >= cutoffStr)
+    .sort((a,b) => new Date(b.date) - new Date(a.date));
 
   res.render('index', {
     buildingName:        data.buildingName,
@@ -113,7 +120,7 @@ app.post('/api/login', (req, res) => {
   if (apt.password !== password) return res.json({ success: false, message: 'סיסמה שגויה' });
   const debt = calcDebt(apt, data);
   res.json({ success: true, apartment: {
-    id: apt.id, ownerName: apt.ownerName||'', ownerType: apt.ownerType||'owner', tenantName: apt.tenantName||'',
+    id: apt.id, ownerName: apt.ownerName||'', ownerType: apt.ownerType||'owner', tenantName: apt.tenantName||'', phone: apt.phone||'',
     debt: debt.total, monthlyDebt: debt.monthlyDebt, specialDebt: debt.specialDebt,
     note: apt.note, monthlyStatus: buildMonthlyStatus(apt, data),
     specialCharges: (data.specialCharges||[]).map(sc => {
@@ -130,7 +137,7 @@ app.post('/api/apartment-status', (req, res) => {
   if (!apt || apt.password !== password) return res.json({ success: false });
   const debt = calcDebt(apt, data);
   res.json({ success: true, apartment: {
-    id: apt.id, ownerName: apt.ownerName||'', ownerType: apt.ownerType||'owner', tenantName: apt.tenantName||'',
+    id: apt.id, ownerName: apt.ownerName||'', ownerType: apt.ownerType||'owner', tenantName: apt.tenantName||'', phone: apt.phone||'',
     debt: debt.total, monthlyDebt: debt.monthlyDebt, specialDebt: debt.specialDebt,
     note: apt.note, monthlyStatus: buildMonthlyStatus(apt, data),
     specialCharges: (data.specialCharges||[]).map(sc => {
@@ -194,6 +201,7 @@ app.post('/api/admin/save', (req, res) => {
     apartments.forEach(inc => {
       const ex = data.apartments.find(a => a.id === inc.id);
       if (!ex) return;
+      ex.phone      = inc.phone      !== undefined ? inc.phone      : (ex.phone||'');
       ex.ownerName  = inc.ownerName  !== undefined ? inc.ownerName  : ex.ownerName;
       ex.ownerType  = inc.ownerType  !== undefined ? inc.ownerType  : (ex.ownerType||'owner');
       ex.tenantName = inc.tenantName !== undefined ? inc.tenantName : (ex.tenantName||'');
@@ -259,6 +267,25 @@ app.delete('/api/admin/special/:id', (req, res) => {
   data.specialCharges = data.specialCharges.filter(sc => sc.id !== req.params.id);
   writeData(data);
   res.json({ success: true });
+});
+
+// ── PHONEBOOK: returns apartment names+phones for logged-in tenants ────────
+app.post('/api/phonebook', (req, res) => {
+  const { apartmentId, password } = req.body;
+  const data = readData();
+  const apt = data.apartments.find(a => a.id === parseInt(apartmentId));
+  if (!apt || apt.password !== password)
+    return res.status(403).json({ success: false });
+  const phonebook = data.apartments
+    .filter(a => a.ownerName || a.phone)
+    .map(a => ({
+      id:         a.id,
+      ownerName:  a.ownerName  || '',
+      tenantName: a.tenantName || '',
+      ownerType:  a.ownerType  || 'owner',
+      phone:      a.phone      || ''
+    }));
+  res.json({ success: true, phonebook, buildingName: data.buildingName, buildingAddress: data.buildingAddress||'' });
 });
 
 // ── EXPORT: download full live data as JSON ──────────────────────────────
