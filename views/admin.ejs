@@ -393,10 +393,27 @@
 
     <!-- ── FINANCE ───────────────────────────────────────────────── -->
     <div class="tab-pane" id="tab-finance">
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;" id="fin-summary-admin">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;" id="fin-summary-admin">
+        <div class="sum-card" style="border:1px solid var(--blue-dim);">
+          <div class="sum-val" id="fin-opening" style="color:var(--blue);">₪0</div>
+          <div class="sum-lbl">יתרת פתיחה</div>
+        </div>
         <div class="sum-card"><div class="sum-val" id="fin-income" style="color:var(--green);">₪0</div><div class="sum-lbl">סה"כ הכנסות</div></div>
         <div class="sum-card"><div class="sum-val" id="fin-expense" style="color:var(--red);">₪0</div><div class="sum-lbl">סה"כ הוצאות</div></div>
-        <div class="sum-card"><div class="sum-val" id="fin-balance" style="color:var(--gold);">₪0</div><div class="sum-lbl">יתרה</div></div>
+        <div class="sum-card" style="border:2px solid rgba(245,200,66,0.4);"><div class="sum-val" id="fin-balance" style="color:var(--gold);">₪0</div><div class="sum-lbl" style="font-weight:700;">יתרה נוכחית</div></div>
+      </div>
+      <div style="font-size:0.76rem;color:var(--text-dim);margin-bottom:18px;direction:rtl;" id="fin-formula">
+        יתרה = יתרת פתיחה + הכנסות − הוצאות
+      </div>
+
+      <!-- Opening balance input -->
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 18px;flex-wrap:wrap;">
+        <label style="font-size:0.85rem;font-weight:700;color:var(--text);white-space:nowrap;">💰 יתרת פתיחה (₪):</label>
+        <input type="number" id="opening-balance-input" value="<%=typeof openingBalance!=='undefined'?openingBalance:0%>"
+          min="0" step="1"
+          style="background:var(--bg);border:1px solid var(--border-strong);border-radius:6px;color:var(--text);font-family:'Heebo',sans-serif;font-size:1rem;font-weight:700;padding:9px 14px;direction:rtl;width:160px;"
+          placeholder="0">
+        <span style="font-size:0.8rem;color:var(--text-muted);">זהו הסכום שהיה בקופה לפני תחילת הרישום במערכת</span>
       </div>
 
       <!-- Add transaction form -->
@@ -846,14 +863,19 @@ document.getElementById('add-ann-btn').addEventListener('click',()=>{
 
 // ═══ FINANCE ══════════════════════════════════════════════════════════════
 function calcFinSummary(){
+  const opening = parseInt(document.getElementById('opening-balance-input').value) || 0;
   const income  = txList.filter(t=>t.type==='income').reduce((s,t)=>s+(t.amount||0),0);
   const expense = txList.filter(t=>t.type==='expense').reduce((s,t)=>s+(t.amount||0),0);
-  const balance = income - expense;
-  document.getElementById('fin-income').textContent  = '₪'+income.toLocaleString();
-  document.getElementById('fin-expense').textContent = '₪'+expense.toLocaleString();
+  const balance = opening + income - expense;
+
+  document.getElementById('fin-opening').textContent  = '₪'+opening.toLocaleString();
+  document.getElementById('fin-income').textContent   = '+₪'+income.toLocaleString();
+  document.getElementById('fin-expense').textContent  = '-₪'+expense.toLocaleString();
   const balEl = document.getElementById('fin-balance');
   balEl.textContent = (balance>=0?'+':'') + '₪'+Math.abs(balance).toLocaleString();
   balEl.style.color = balance>=0 ? 'var(--gold)' : 'var(--red)';
+  document.getElementById('fin-formula').textContent =
+    `יתרה = ₪${opening.toLocaleString()} (פתיחה) + ₪${income.toLocaleString()} (הכנסות) − ₪${expense.toLocaleString()} (הוצאות) = ${balance>=0?'+':''}₪${Math.abs(balance).toLocaleString()}`;
 }
 
 function renderTxRow(tx){
@@ -868,6 +890,8 @@ function renderTxRow(tx){
     <td><button class="btn btn-danger btn-sm delete-tx-btn" style="padding:4px 10px;">🗑</button></td>`;
   return tr;
 }
+
+document.getElementById('opening-balance-input').addEventListener('input', calcFinSummary);
 
 document.getElementById('add-tx-btn').addEventListener('click',()=>{
   const type   = document.getElementById('tx-type').value;
@@ -963,6 +987,7 @@ async function saveAll(){
     buildingName:        document.getElementById('set-bname').value,
     buildingAddress:     document.getElementById('set-baddress').value,
     monthlyFee:          document.getElementById('set-fee').value,
+    openingBalance:      parseInt(document.getElementById('opening-balance-input').value) || 0,
     showPublicDebts:     document.getElementById('set-show-debts').checked,
     showFinancialReport: document.getElementById('set-show-finance').checked,
     bankDetails:{

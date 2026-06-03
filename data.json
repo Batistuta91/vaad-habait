@@ -215,5 +215,6 @@
       "tenantName": ""
     }
   ],
-  "specialCharges": []
+  "specialCharges": [],
+  "openingBalance": 0
 }

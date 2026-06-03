@@ -59,9 +59,10 @@ app.get('/', (req, res) => {
 
   // Financial summary (income - expense)
   const transactions = data.transactions || [];
+  const openingBalance = data.openingBalance || 0;
   const totalIncome  = transactions.filter(t=>t.type==='income').reduce((s,t)=>s+(t.amount||0),0);
   const totalExpense = transactions.filter(t=>t.type==='expense').reduce((s,t)=>s+(t.amount||0),0);
-  const balance      = totalIncome - totalExpense;
+  const balance      = openingBalance + totalIncome - totalExpense;
 
   // Recent transactions (last 10) for public display
   const recentTx = [...transactions]
@@ -78,7 +79,7 @@ app.get('/', (req, res) => {
     announcements:       (data.announcements||[]).filter(a=>a.active),
     publicApartments:    data.apartments.map(a => { const d=calcDebt(a,data); return {id:a.id,debt:d.total}; }),
     specialCharges:      data.specialCharges||[],
-    totalIncome, totalExpense, balance, recentTx,
+    totalIncome, totalExpense, balance, openingBalance, recentTx,
     currentYear: now.getFullYear(), currentMonth: now.getMonth()+1, MONTHS
   });
 });
@@ -128,6 +129,7 @@ app.get('/admin', (req, res) => {
     buildingName:        data.buildingName,
     buildingAddress:     data.buildingAddress||'',
     monthlyFee:          data.monthlyFee||350,
+    openingBalance:      data.openingBalance||0,
     showPublicDebts:     data.showPublicDebts !== false,
     showFinancialReport: data.showFinancialReport !== false,
     bankDetails:         data.bankDetails,
@@ -158,6 +160,7 @@ app.post('/api/admin/save', (req, res) => {
     if (settings.buildingName  !== undefined) data.buildingName  = settings.buildingName;
     if (settings.buildingAddress !== undefined) data.buildingAddress = settings.buildingAddress;
     if (settings.monthlyFee)    data.monthlyFee    = parseInt(settings.monthlyFee);
+    if (settings.openingBalance !== undefined) data.openingBalance = parseInt(settings.openingBalance) || 0;
     if (settings.showPublicDebts !== undefined) data.showPublicDebts = settings.showPublicDebts;
     if (settings.showFinancialReport !== undefined) data.showFinancialReport = settings.showFinancialReport;
     if (settings.newAdminPassword && settings.newAdminPassword.length >= 4)
