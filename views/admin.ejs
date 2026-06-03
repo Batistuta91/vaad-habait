@@ -680,13 +680,6 @@ function renderMatrix(year){
     tbody.appendChild(tr);
   });
 
-  // Contextmenu delegation — catch right-click anywhere in a pay-cell (including child elements)
-  tbody.addEventListener('contextmenu', e=>{
-    e.preventDefault();
-    const cell = e.target.closest('.pay-cell[data-apt]');
-    if(cell) openPartialPopup(cell);
-  });
-
   // left click = toggle full/unpaid
   tbody.querySelectorAll('.pay-cell[data-apt]').forEach(cell=>{
     let pressTimer=null;
@@ -700,13 +693,6 @@ function renderMatrix(year){
       refreshCell(cell,aptId,key);
       updateDebtCell(aptId);updateSummary();
       refreshMarkAllBtn(cell.closest('tr'),aptId,parseInt(cell.dataset.year),monthsToShow);
-    });
-
-    // right click on cell or partial-btn = partial popup (desktop)
-    cell.addEventListener('contextmenu', e=>{
-      e.preventDefault();
-      e.stopPropagation();
-      openPartialPopup(cell);
     });
 
     // long press mobile (500ms)
@@ -838,6 +824,13 @@ document.addEventListener('click',e=>{
   const id=btn.dataset.id;const el=document.getElementById(`cur-pass-${id}`);
   if(el.textContent==='•••'){el.textContent=btn.dataset.pass;btn.textContent='הסתר';}
   else{el.textContent='•••';btn.textContent='הצג';}
+});
+
+// ── RIGHT-CLICK on payment matrix — registered ONCE, works after every re-render ──
+document.getElementById('payments-matrix').addEventListener('contextmenu', e=>{
+  e.preventDefault();
+  const cell = e.target.closest('.pay-cell[data-apt]');
+  if(cell) openPartialPopup(cell);
 });
 
 // PARTIAL POPUP
