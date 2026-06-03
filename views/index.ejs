@@ -288,9 +288,12 @@
     <div class="card">
       <div class="payment-section">
         <div class="bank-detail-box">
-          <div style="font-size:0.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:12px;">פרטי בנק</div>
+          <div class="bank-header">פרטי בנק</div>
           <%[['בנק',bankDetails.bank],['סניף',bankDetails.branch],['חשבון',bankDetails.account],['שם',bankDetails.beneficiary]].forEach(([l,v])=>{%>
-          <div class="bank-row"><span class="bank-label"><%=l%></span><span class="bank-val"><%=v%></span></div>
+          <div class="bank-row">
+            <span class="bank-val"><%=v%></span>
+            <span class="bank-label"><%=l%></span>
+          </div>
           <%})%>
         </div>
         <div class="payment-actions">

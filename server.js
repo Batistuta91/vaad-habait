@@ -4,7 +4,19 @@ const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const DATA_FILE = path.join(__dirname, 'data.json');
+
+// Railway: use /data volume if available (persistent storage),
+// otherwise fall back to project directory (local dev)
+const DATA_DIR  = fs.existsSync('/data') ? '/data' : __dirname;
+const DATA_FILE = path.join(DATA_DIR, 'data.json');
+const SEED_FILE = path.join(__dirname, 'data.json'); // always present in repo
+
+// On first boot (or after deploy), if /data/data.json doesn't exist yet,
+// copy the seed file so we don't start with empty data
+if (!fs.existsSync(DATA_FILE)) {
+  fs.copyFileSync(SEED_FILE, DATA_FILE);
+  console.log(`📋 Seeded data from ${SEED_FILE} → ${DATA_FILE}`);
+}
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));

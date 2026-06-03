@@ -677,23 +677,46 @@ label {
   background: var(--bg2);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  padding: 16px;
+  padding: 20px;
   flex: 1;
-  min-width: 220px;
+  min-width: 240px;
+}
+
+.bank-detail-box .bank-header {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 14px;
+  text-align: right;
 }
 
 .bank-detail-box .bank-row {
   display: flex;
   justify-content: space-between;
-  font-size: 0.88rem;
-  padding: 5px 0;
+  align-items: center;
+  font-size: 1rem;
+  padding: 9px 0;
   border-bottom: 1px solid var(--border);
+  direction: rtl;
+  gap: 12px;
 }
 
 .bank-detail-box .bank-row:last-child { border-bottom: none; }
 
-.bank-detail-box .bank-label { color: var(--text-muted); }
-.bank-detail-box .bank-val { font-weight: 600; color: var(--text); }
+.bank-detail-box .bank-label {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  flex-shrink: 0;
+}
+
+.bank-detail-box .bank-val {
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--text);
+  text-align: right;
+}
 
 .payment-actions {
   display: flex;
