@@ -440,6 +440,22 @@
           <div class="form-group"><label>אימות</label><input type="password" id="set-new-pass2" placeholder="הזן שוב"></div>
         </div>
       </div>
+
+      <!-- BACKUP / RESTORE -->
+      <div class="card" style="margin-top:16px;">
+        <h3 class="section-title" style="margin-bottom:6px;">גיבוי ושחזור נתונים</h3>
+        <p class="text-muted" style="font-size:0.82rem;margin-bottom:18px;">
+          מומלץ לגבות לפני כל עדכון קוד. השחזור יחליף את <strong>כל</strong> הנתונים הקיימים.
+        </p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <button class="btn btn-outline" id="backup-btn">⬇️ הורד גיבוי (JSON)</button>
+          <label class="btn btn-outline" style="cursor:pointer;">
+            ⬆️ שחזר מגיבוי
+            <input type="file" id="restore-file" accept=".json" style="display:none;">
+          </label>
+        </div>
+        <div id="restore-status" style="margin-top:12px;font-size:0.85rem;display:none;"></div>
+      </div>
     </div>
 
     <!-- ── FINANCE ───────────────────────────────────────────────── -->
@@ -640,10 +656,10 @@ function renderMatrix(year){
       } else {
         const state=cellState(apt.id,key);
         const paid=payments[apt.id][key]||0;
-        const icon=state==='full'?'✓':state==='partial'?'~':'✗';
-        const sub=state==='partial'?`<span class="cell-amount">₪${paid}</span>`:'';
+        const icon=state==='full'?'✓':state==='unpaid'?'✗':'';
+        const amtLine=state==='partial'?`<span class="cell-amount" style="font-size:0.72rem;font-weight:700;">₪${paid}</span>`:'';
         html+=`<td><div class="pay-cell ${state}" data-apt="${apt.id}" data-key="${key}" data-year="${year}" data-month="${m}">
-          <span>${icon}</span>${sub}
+          ${icon?`<span>${icon}</span>`:''}${amtLine}
           <button class="partial-btn" title="תשלום חלקי">✏</button>
         </div></td>`;
       }
@@ -724,10 +740,10 @@ function refreshMarkAllBtn(tr,aptId,year,months){
 function refreshCell(cell,aptId,key){
   const state=cellState(aptId,key);
   const paid=payments[aptId][key]||0;
-  const icon=state==='full'?'✓':state==='partial'?'~':'✗';
-  const sub=state==='partial'?`<span class="cell-amount">₪${paid}</span>`:'';
+  const icon=state==='full'?'✓':state==='unpaid'?'✗':'';
+  const amtLine=state==='partial'?`<span class="cell-amount" style="font-size:0.72rem;font-weight:700;">₪${paid}</span>`:'';
   cell.className=`pay-cell ${state}`;
-  cell.innerHTML=`<span>${icon}</span>${sub}`;
+  cell.innerHTML=`${icon?`<span>${icon}</span>`:''}${amtLine}<button class="partial-btn" title="תשלום חלקי">✏</button>`;
 }
 
 function updateDebtCell(aptId){
@@ -1126,6 +1142,66 @@ async function saveAll(){
 }
 
 document.getElementById('save-all-btn').addEventListener('click',saveAll);
+
+// ══ BACKUP ════════════════════════════════════════════════════════════════
+document.getElementById('backup-btn').addEventListener('click',()=>{
+  if(!adminPassword){ showToast('התחבר תחילה','error'); return; }
+  // Direct download via link
+  const a = document.createElement('a');
+  a.href = `/api/admin/export/${encodeURIComponent(adminPassword)}`;
+  a.download = `vaad-backup-${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  showToast('גיבוי מוריד...');
+});
+
+// ══ RESTORE ══════════════════════════════════════════════════════════════
+document.getElementById('restore-file').addEventListener('change', async e=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const statusEl = document.getElementById('restore-status');
+  statusEl.style.display = 'block';
+  statusEl.style.color   = 'var(--text-muted)';
+  statusEl.textContent   = '📂 קורא קובץ...';
+
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+
+    if(!data.apartments || !data.adminPassword){
+      statusEl.style.color = 'var(--red)';
+      statusEl.textContent = '❌ קובץ לא תקין — חסרים שדות חובה';
+      return;
+    }
+
+    if(!confirm(`לשחזר נתונים מ-${file.name}?\n\nפעולה זו תחליף את כל הנתונים הקיימים!`)){
+      statusEl.style.display = 'none';
+      e.target.value = '';
+      return;
+    }
+
+    statusEl.textContent = '⏳ משחזר...';
+    const r = await fetch('/api/admin/import', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ adminPassword, data })
+    });
+    const res = await r.json();
+    if(res.success){
+      statusEl.style.color = 'var(--green)';
+      statusEl.textContent = '✅ ' + res.message + ' — מרענן דף...';
+      setTimeout(()=>location.reload(), 1500);
+    } else {
+      statusEl.style.color = 'var(--red)';
+      statusEl.textContent = '❌ ' + (res.message||'שגיאה');
+    }
+  } catch(err){
+    statusEl.style.color = 'var(--red)';
+    statusEl.textContent = '❌ קובץ JSON לא תקין';
+  }
+  e.target.value = '';
+});
 document.addEventListener('keydown',e=>{
   if((e.ctrlKey||e.metaKey)&&e.key==='s'){
     e.preventDefault();

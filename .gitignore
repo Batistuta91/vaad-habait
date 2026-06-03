@@ -2,6 +2,7 @@ node_modules/
 .env
 npm-debug.log*
 
-# data.json IS committed to git so settings survive deploys.
-# If you add a Railway Volume at /data, data.json there takes priority
-# and this file becomes a fallback seed only.
+# live-data.json = the file the app writes to. NEVER commit it.
+# It lives on the Railway Volume at /data/live-data.json
+# or locally at ./live-data.json (git-ignored so it stays on your machine)
+live-data.json

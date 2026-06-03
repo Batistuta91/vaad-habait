@@ -1,34 +1,36 @@
 const express = require('express');
-const fs = require('fs');
-const path = require('path');
+const fs      = require('fs');
+const path    = require('path');
 
-const app = express();
+const app  = express();
 const PORT = process.env.PORT || 3000;
 
-// Data file location:
-// 1. If Railway Volume is mounted at /data — use it (fully persistent across deploys)
-// 2. Otherwise — use project directory (data survives restarts but NOT new deploys)
-//    In this case, ensure data.json is NOT in .gitignore so it deploys with the repo.
-const DATA_DIR  = fs.existsSync('/data') ? '/data' : __dirname;
-const DATA_FILE = path.join(DATA_DIR, 'data.json');
-const SEED_FILE = path.join(__dirname, 'data.seed.json');
+// ═══════════════════════════════════════════════════════════════════════════
+// DATA PERSISTENCE STRATEGY
+//
+// LIVE_FILE  = the file that gets written on every save. NEVER in Git.
+//              Lives at /data/live-data.json (Railway Volume) — persistent forever.
+//
+// SEED_FILE  = default starting data. IN Git. Read-only after first boot.
+//              Lives at <project>/data.json
+//
+// On first deploy: LIVE_FILE doesn't exist → copy SEED_FILE to LIVE_FILE.
+// On every subsequent deploy: LIVE_FILE already exists → use as-is, ignore SEED_FILE.
+// ═══════════════════════════════════════════════════════════════════════════
 
-// If using /data volume and data.json not yet there — seed it once
-if (DATA_DIR === '/data' && !fs.existsSync(DATA_FILE)) {
-  const seedSrc = fs.existsSync(SEED_FILE) ? SEED_FILE : path.join(__dirname, 'data.json');
-  if (fs.existsSync(seedSrc)) {
-    fs.copyFileSync(seedSrc, DATA_FILE);
-    console.log(`📋 Volume first boot: seeded ${DATA_FILE}`);
-  }
+const VOLUME_DIR = '/data';
+const SEED_FILE  = path.join(__dirname, 'data.json');   // in Git — never overwritten by app
+const LIVE_FILE  = fs.existsSync(VOLUME_DIR)
+  ? path.join(VOLUME_DIR, 'live-data.json')             // Railway Volume (persistent)
+  : path.join(__dirname, 'live-data.json');             // local dev fallback
+
+// First boot: seed the live file from data.json
+if (!fs.existsSync(LIVE_FILE)) {
+  fs.copyFileSync(SEED_FILE, LIVE_FILE);
+  console.log(`✅ First boot: created ${LIVE_FILE} from data.json`);
 }
 
-// If data.json doesn't exist at all (fresh project dir install) — copy seed
-if (!fs.existsSync(DATA_FILE) && fs.existsSync(SEED_FILE)) {
-  fs.copyFileSync(SEED_FILE, DATA_FILE);
-  console.log(`📋 Created data.json from seed`);
-}
-
-console.log(`💾 Data file: ${DATA_FILE}`);
+console.log(`💾 Live data: ${LIVE_FILE}`);
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -36,8 +38,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-function readData() { return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')); }
-function writeData(d) { fs.writeFileSync(DATA_FILE, JSON.stringify(d, null, 2), 'utf8'); }
+function readData()  { return JSON.parse(fs.readFileSync(LIVE_FILE, 'utf8')); }
+function writeData(d){ fs.writeFileSync(LIVE_FILE, JSON.stringify(d, null, 2), 'utf8'); }
 
 const MONTHS = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
 
@@ -76,22 +78,16 @@ function buildMonthlyStatus(apt, data) {
   return res;
 }
 
-// ── TENANT ────────────────────────────────────────────────────────────────────
+// ── TENANT ────────────────────────────────────────────────────────────────
 app.get('/', (req, res) => {
   const data = readData();
   const now  = new Date();
-
-  // Financial summary (income - expense)
-  const transactions = data.transactions || [];
+  const transactions  = data.transactions || [];
   const openingBalance = data.openingBalance || 0;
-  const totalIncome  = transactions.filter(t=>t.type==='income').reduce((s,t)=>s+(t.amount||0),0);
-  const totalExpense = transactions.filter(t=>t.type==='expense').reduce((s,t)=>s+(t.amount||0),0);
-  const balance      = openingBalance + totalIncome - totalExpense;
-
-  // Recent transactions (last 10) for public display
-  const recentTx = [...transactions]
-    .sort((a,b)=>new Date(b.date)-new Date(a.date))
-    .slice(0, 10);
+  const totalIncome   = transactions.filter(t=>t.type==='income').reduce((s,t)=>s+(t.amount||0),0);
+  const totalExpense  = transactions.filter(t=>t.type==='expense').reduce((s,t)=>s+(t.amount||0),0);
+  const balance       = openingBalance + totalIncome - totalExpense;
+  const recentTx      = [...transactions].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,10);
 
   res.render('index', {
     buildingName:        data.buildingName,
@@ -117,8 +113,7 @@ app.post('/api/login', (req, res) => {
   if (apt.password !== password) return res.json({ success: false, message: 'סיסמה שגויה' });
   const debt = calcDebt(apt, data);
   res.json({ success: true, apartment: {
-    id: apt.id, ownerName: apt.ownerName||'',
-    ownerType: apt.ownerType||'owner', tenantName: apt.tenantName||'',
+    id: apt.id, ownerName: apt.ownerName||'', ownerType: apt.ownerType||'owner', tenantName: apt.tenantName||'',
     debt: debt.total, monthlyDebt: debt.monthlyDebt, specialDebt: debt.specialDebt,
     note: apt.note, monthlyStatus: buildMonthlyStatus(apt, data),
     specialCharges: (data.specialCharges||[]).map(sc => {
@@ -135,8 +130,7 @@ app.post('/api/apartment-status', (req, res) => {
   if (!apt || apt.password !== password) return res.json({ success: false });
   const debt = calcDebt(apt, data);
   res.json({ success: true, apartment: {
-    id: apt.id, ownerName: apt.ownerName||'',
-    ownerType: apt.ownerType||'owner', tenantName: apt.tenantName||'',
+    id: apt.id, ownerName: apt.ownerName||'', ownerType: apt.ownerType||'owner', tenantName: apt.tenantName||'',
     debt: debt.total, monthlyDebt: debt.monthlyDebt, specialDebt: debt.specialDebt,
     note: apt.note, monthlyStatus: buildMonthlyStatus(apt, data),
     specialCharges: (data.specialCharges||[]).map(sc => {
@@ -146,7 +140,7 @@ app.post('/api/apartment-status', (req, res) => {
   }});
 });
 
-// ── ADMIN ─────────────────────────────────────────────────────────────────────
+// ── ADMIN ─────────────────────────────────────────────────────────────────
 app.get('/admin', (req, res) => {
   const data = readData();
   const now  = new Date();
@@ -183,17 +177,17 @@ app.post('/api/admin/save', (req, res) => {
     return res.status(403).json({ success: false, message: 'אין הרשאה' });
 
   if (settings) {
-    if (settings.buildingName  !== undefined) data.buildingName  = settings.buildingName;
+    if (settings.buildingName    !== undefined) data.buildingName    = settings.buildingName;
     if (settings.buildingAddress !== undefined) data.buildingAddress = settings.buildingAddress;
-    if (settings.monthlyFee)    data.monthlyFee    = parseInt(settings.monthlyFee);
-    if (settings.openingBalance !== undefined) data.openingBalance = parseInt(settings.openingBalance) || 0;
-    if (settings.showPublicDebts !== undefined) data.showPublicDebts = settings.showPublicDebts;
+    if (settings.monthlyFee)      data.monthlyFee      = parseInt(settings.monthlyFee);
+    if (settings.openingBalance   !== undefined) data.openingBalance = parseInt(settings.openingBalance)||0;
+    if (settings.showPublicDebts  !== undefined) data.showPublicDebts  = settings.showPublicDebts;
     if (settings.showFinancialReport !== undefined) data.showFinancialReport = settings.showFinancialReport;
     if (settings.newAdminPassword && settings.newAdminPassword.length >= 4)
       data.adminPassword = settings.newAdminPassword;
-    if (settings.bankDetails)   data.bankDetails = { ...data.bankDetails, ...settings.bankDetails };
-    if (settings.payboxLink !== undefined) data.payboxLink = settings.payboxLink;
-    if (settings.years)         data.years = settings.years;
+    if (settings.bankDetails)     data.bankDetails = { ...data.bankDetails, ...settings.bankDetails };
+    if (settings.payboxLink       !== undefined) data.payboxLink = settings.payboxLink;
+    if (settings.years)           data.years = settings.years;
   }
 
   if (apartments && Array.isArray(apartments)) {
@@ -225,13 +219,9 @@ app.post('/api/admin/save', (req, res) => {
 
   if (transactions !== undefined) {
     data.transactions = transactions.map(t => ({
-      id:          t.id,
-      type:        t.type === 'income' ? 'income' : 'expense',
-      category:    t.category||'',
-      description: t.description||'',
-      amount:      Math.abs(parseInt(t.amount)||0),
-      date:        t.date||'',
-      note:        t.note||''
+      id: t.id, type: t.type==='income'?'income':'expense',
+      category: t.category||'', description: t.description||'',
+      amount: Math.abs(parseInt(t.amount)||0), date: t.date||'', note: t.note||''
     }));
   }
 
@@ -271,6 +261,28 @@ app.delete('/api/admin/special/:id', (req, res) => {
   res.json({ success: true });
 });
 
+// ── EXPORT: download full live data as JSON ──────────────────────────────
+app.get('/api/admin/export/:password', (req, res) => {
+  const data = readData();
+  if (req.params.password !== data.adminPassword)
+    return res.status(403).json({ error: 'אין הרשאה' });
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Content-Disposition', 'attachment; filename="vaad-backup.json"');
+  res.send(JSON.stringify(data, null, 2));
+});
+
+// ── IMPORT: restore full live data from uploaded JSON ────────────────────
+app.post('/api/admin/import', (req, res) => {
+  const { adminPassword, data: importedData } = req.body;
+  const current = readData();
+  if (adminPassword !== current.adminPassword)
+    return res.status(403).json({ success: false, message: 'אין הרשאה' });
+  if (!importedData || !importedData.apartments)
+    return res.status(400).json({ success: false, message: 'קובץ לא תקין' });
+  writeData(importedData);
+  res.json({ success: true, message: 'הנתונים שוחזרו בהצלחה!' });
+});
+
 app.listen(PORT, () => {
-  console.log(`\n✅  http://localhost:${PORT}  |  /admin\n`);
+  console.log(`\n✅ ועד בית — http://localhost:${PORT}\n   מנהל: http://localhost:${PORT}/admin\n`);
 });
