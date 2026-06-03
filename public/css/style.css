@@ -990,34 +990,86 @@ label {
 .badge-green { background: var(--green-dim); color: var(--green); }
 .badge-red   { background: var(--red-dim); color: var(--red); }
 
-/* ─── MOBILE ─────────────────────────────────────────────────────────────── */
+/* ─── MOBILE & RESPONSIVE ────────────────────────────────────────────────── */
+
+/* Tablet */
+@media (max-width: 900px) {
+  .page-hero h1 { font-size: clamp(1.4rem, 4vw, 2.2rem); }
+}
+
+/* Mobile */
 @media (max-width: 640px) {
-  .header-inner { padding: 12px 16px; }
-  .logo-text { font-size: 1rem; }
+  html { font-size: 16px; } /* slightly smaller on mobile */
 
-  .page-hero { padding: 32px 16px 24px; }
+  .header-inner { padding: 10px 14px; gap: 8px; }
+  .logo-icon { width: 32px; height: 32px; font-size: 16px; }
+  .logo-text { font-size: 0.88rem; }
+  .logo-text span { font-size: 0.65rem; }
 
-  .container { padding: 0 14px; }
+  .header-nav { gap: 6px; }
+  .header-nav a { font-size: 0.75rem; padding: 6px 10px; }
+  .theme-toggle { padding: 5px 10px; font-size: 0.75rem; gap: 5px; }
+  .theme-toggle #theme-label { display: none; } /* hide label on mobile */
 
-  .login-card,
-  .card,
-  .project-card { padding: 18px; }
+  .page-hero { padding: 24px 14px 18px; }
+  .page-hero h1 { font-size: 1.5rem; }
+  .page-hero p { font-size: 0.82rem; }
 
-  .login-row { flex-direction: column; }
+  .container { padding: 0 12px; }
 
-  .personal-card { flex-direction: column; text-align: center; }
+  .section-title { font-size: 1rem; }
+  .section-title::before { height: 18px; }
 
-  .apartments-grid { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px; }
+  .card, .login-card, .project-card { padding: 14px; }
 
-  .payment-section { flex-direction: column; }
+  .login-row { flex-direction: column; gap: 10px; }
+  .login-row .form-group { min-width: 100%; }
 
-  .project-header { flex-direction: column; }
-  .project-stats { justify-content: flex-start; }
+  .personal-card { flex-direction: column; text-align: center; gap: 12px; padding: 16px; }
+  .personal-card .apt-badge { width: 52px; height: 52px; font-size: 1.2rem; }
+  .debt-badge { font-size: 0.95rem; }
 
-  .save-bar { justify-content: stretch; }
+  .apartments-grid { grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 6px; }
+  .apt-tile { padding: 9px 6px; }
+  .apt-num { font-size: 0.68rem; }
+  .apt-debt { font-size: 0.8rem; }
+
+  .payment-section { flex-direction: column; gap: 12px; }
+  .payment-actions { flex-direction: row; flex-wrap: wrap; }
+  .payment-actions .btn { flex: 1; min-width: 140px; }
+
+  .project-header { flex-direction: column; gap: 10px; }
+  .project-stats { justify-content: flex-start; gap: 8px; }
+  .project-stat { padding: 6px 10px; }
+
+  .chips-grid { gap: 5px; }
+  .chip { padding: 4px 9px; font-size: 0.72rem; }
+
+  .month-chip { min-width: 44px; padding: 6px 7px; }
+  .month-chip .month-name { font-size: 0.62rem; }
+
+  .save-bar { justify-content: stretch; padding: 10px 14px; gap: 8px; }
   .save-bar .btn { flex: 1; }
+  .save-bar span { display: none; } /* hide hint text */
+
+  .tabs { gap: 4px; }
+  .tab-btn { padding: 8px 12px; font-size: 0.78rem; }
+
+  .fin-summary { grid-template-columns: 1fr 1fr !important; }
+  .fin-val { font-size: 1.1rem; }
+
+  .ann-item { padding: 10px 12px; min-width: 100%; border-left: none; border-bottom: 1px solid var(--border); }
+  .ann-text strong { font-size: 0.82rem; }
+  .ann-text span { font-size: 0.74rem; }
 
   body { padding-bottom: 80px; }
+}
+
+/* Very small phones */
+@media (max-width: 380px) {
+  html { font-size: 15px; }
+  .tabs { }
+  .tab-btn { padding: 7px 9px; font-size: 0.72rem; }
 }
 
 @media (min-width: 641px) {
@@ -1101,4 +1153,52 @@ label {
   background: var(--red-dim);
   border-radius: var(--radius-sm);
   border: 1px solid rgba(239,68,68,0.3);
+}
+
+/* ─── ADMIN MATRIX MOBILE ────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  /* Matrix scrolls horizontally — add hint */
+  .matrix-wrapper {
+    position: relative;
+  }
+  .matrix-wrapper::after {
+    content: '← גלול לצפייה בכל החודשים';
+    display: block;
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    text-align: center;
+    padding: 6px 0 2px;
+  }
+  .matrix-table th { padding: 7px 3px; font-size: 0.62rem; min-width: 34px; }
+  .pay-cell { height: 34px; font-size: 0.72rem; }
+  .partial-btn { font-size: 0.55rem; opacity: 0.6 !important; }
+  .matrix-table .apt-th { min-width: 70px; padding: 6px 8px; font-size: 0.75rem; }
+  .mark-all-btn { font-size: 0.6rem; padding: 3px 5px; white-space: normal; max-width: 58px; }
+
+  /* Tabs scroll on mobile */
+  .tabs { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
+  .tabs::-webkit-scrollbar { height: 3px; }
+  .tab-btn { flex-shrink: 0; }
+
+  /* Admin apt grid v2 on mobile */
+  .apt-grid-v2 { padding: 8px 10px; gap: 6px; }
+
+  /* partial popup — full width on mobile */
+  .partial-popup {
+    position: fixed !important;
+    bottom: 0 !important;
+    top: auto !important;
+    left: 0 !important;
+    right: 0 !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+    border-radius: var(--radius) var(--radius) 0 0;
+    border-bottom: none;
+    animation: slideUp 0.2s ease !important;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+  }
+  .popup-inner { padding: 20px 20px 32px; }
 }
