@@ -14,6 +14,82 @@
   <style>
   html.pre-light body{background:#f5f6fa!important;}
 
+  /* ── UNIFIED LOGIN CARD ── */
+  .unified-login-wrap{
+    display:flex;justify-content:center;
+    padding:8px 0 24px;
+  }
+  .unified-login-card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:36px 32px 32px;
+    width:100%;max-width:400px;
+    box-shadow:var(--shadow-lg);
+    text-align:center;
+  }
+  .ulogin-icon{font-size:3rem;margin-bottom:14px;display:block;}
+  .ulogin-title{
+    font-family:'Frank Ruhl Libre',serif;
+    font-size:1.6rem;font-weight:900;
+    color:var(--text);margin-bottom:4px;
+  }
+  .ulogin-sub{
+    font-size:0.82rem;color:var(--text-muted);
+    margin-bottom:24px;
+  }
+
+  /* type selector */
+  .ulogin-type-row{
+    display:flex;gap:8px;margin-bottom:24px;
+    background:var(--bg2);border-radius:var(--radius-sm);
+    padding:5px;border:1px solid var(--border);
+  }
+  .ulogin-type-btn{
+    flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;
+    padding:10px 8px;border-radius:8px;border:none;
+    background:transparent;color:var(--text-muted);
+    font-family:'Heebo',sans-serif;font-size:0.85rem;font-weight:600;
+    cursor:pointer;transition:var(--transition);
+  }
+  .ulogin-type-btn.active{
+    background:var(--gold);color:#111;
+    box-shadow:0 2px 10px rgba(245,200,66,0.3);
+  }
+  .ulogin-type-icon{font-size:1.3rem;}
+
+  /* fields */
+  .ulogin-field{
+    text-align:right;margin-bottom:16px;
+  }
+  .ulogin-field label{
+    display:block;font-size:0.8rem;font-weight:700;
+    color:var(--text-muted);text-transform:uppercase;
+    letter-spacing:0.05em;margin-bottom:7px;
+  }
+  .ulogin-select,.ulogin-input{
+    width:100%;background:var(--bg2);
+    border:1px solid var(--border-strong);
+    border-radius:var(--radius-sm);
+    color:var(--text);font-family:'Heebo',sans-serif;
+    font-size:1rem;padding:12px 14px;
+    direction:rtl;transition:var(--transition);
+  }
+  .ulogin-select:focus,.ulogin-input:focus{
+    outline:none;border-color:var(--gold);
+    box-shadow:0 0 0 3px var(--gold-dim);
+  }
+  .ulogin-error{
+    color:var(--red);font-size:0.85rem;
+    margin:0 0 14px;padding:10px 14px;
+    background:var(--red-dim);border-radius:var(--radius-sm);
+    border:1px solid rgba(239,68,68,0.3);
+    text-align:right;
+  }
+  .ulogin-btn{
+    margin-top:4px;padding:14px;font-size:1rem;
+  }
+
   /* ── ANNOUNCEMENTS ── */
   .ann-bar{background:var(--bg2);border-bottom:1px solid var(--border);}
   .ann-inner{max-width:1100px;margin:0 auto;padding:0 20px;display:flex;flex-wrap:wrap;}
@@ -89,28 +165,59 @@
 
 <main class="container" style="padding-bottom:60px;">
 
-  <!-- ══ LOGIN ══════════════════════════════════════════════════════════ -->
+  <!-- ══ UNIFIED LOGIN CARD ══════════════════════════════════════════════ -->
   <section class="section">
-    <h2 class="section-title">כניסה לאזור האישי שלך</h2>
-    <div class="login-card">
-      <div class="login-row">
-        <div class="form-group">
-          <label for="apt-select">מספר דירה</label>
-          <select id="apt-select">
-            <option value="">— בחר דירה —</option>
-            <% for(let i=1;i<=20;i++){%><option value="<%=i%>">דירה <%=i%></option><%}%>
-          </select>
+    <div class="unified-login-wrap">
+      <div class="unified-login-card" id="login-card">
+
+        <div class="ulogin-icon">🔐</div>
+        <h2 class="ulogin-title">כניסה למערכת</h2>
+        <p class="ulogin-sub"><%= buildingName %></p>
+
+        <!-- WHO ARE YOU -->
+        <div class="ulogin-type-row">
+          <button class="ulogin-type-btn active" id="type-tenant" onclick="setLoginType('tenant')">
+            <span class="ulogin-type-icon">🏠</span>
+            <span>דייר</span>
+          </button>
+          <button class="ulogin-type-btn" id="type-admin" onclick="setLoginType('admin')">
+            <span class="ulogin-type-icon">👑</span>
+            <span>ועד בית</span>
+          </button>
         </div>
-        <div class="form-group">
-          <label for="apt-password">סיסמה</label>
-          <input type="password" id="apt-password" placeholder="הזן סיסמה" autocomplete="current-password">
+
+        <!-- TENANT FIELDS -->
+        <div id="tenant-fields">
+          <div class="ulogin-field">
+            <label>מספר דירה</label>
+            <select id="apt-select" class="ulogin-select">
+              <option value="">— בחר דירה —</option>
+              <% for(let i=1;i<=20;i++){%>
+              <option value="<%=i%>">דירה <%=i%></option>
+              <%}%>
+            </select>
+          </div>
+          <div class="ulogin-field">
+            <label>סיסמה</label>
+            <input type="password" id="apt-password" class="ulogin-input"
+                   placeholder="הזן סיסמה" autocomplete="current-password">
+          </div>
         </div>
-        <div class="form-group" style="flex:none;">
-          <label style="visibility:hidden;">כניסה</label>
-          <button class="btn btn-primary" id="login-btn">כניסה</button>
+
+        <!-- ADMIN FIELDS -->
+        <div id="admin-fields" style="display:none;">
+          <div class="ulogin-field">
+            <label>סיסמת ועד בית</label>
+            <input type="password" id="admin-password" class="ulogin-input"
+                   placeholder="הזן סיסמת מנהל">
+          </div>
         </div>
+
+        <div id="login-error" class="ulogin-error" style="display:none;"></div>
+
+        <button class="btn btn-primary btn-full ulogin-btn" id="login-btn">כניסה</button>
+
       </div>
-      <div id="login-error" class="form-error" style="display:none;"></div>
     </div>
 
     <!-- PERSONAL AREA — hidden until explicit login -->
@@ -436,62 +543,90 @@ function renderPersonal(apt){
   } else spSec.style.display='none';
 }
 
+// ── LOGIN TYPE TOGGLE ─────────────────────────────────────────────────────
+let loginType = 'tenant';
+function setLoginType(type){
+  loginType = type;
+  document.getElementById('type-tenant').classList.toggle('active', type==='tenant');
+  document.getElementById('type-admin').classList.toggle('active', type==='admin');
+  document.getElementById('tenant-fields').style.display = type==='tenant' ? 'block' : 'none';
+  document.getElementById('admin-fields').style.display  = type==='admin'  ? 'block' : 'none';
+  document.getElementById('login-error').style.display   = 'none';
+  // focus first input
+  setTimeout(()=>{
+    const inp = type==='tenant'
+      ? document.getElementById('apt-select')
+      : document.getElementById('admin-password');
+    if(inp) inp.focus();
+  }, 50);
+}
+
 // ── LOGIN ─────────────────────────────────────────────────────────────────
 async function doLogin(){
-  const aptId=document.getElementById('apt-select').value;
-  const pass =document.getElementById('apt-password').value;
-  const errEl=document.getElementById('login-error');
-  if(!aptId||!pass){ errEl.style.display='block'; errEl.textContent='אנא בחר דירה והזן סיסמה.'; return; }
-  const btn=document.getElementById('login-btn');
-  btn.disabled=true; btn.textContent='...';
-  try{
-    const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({apartmentId:aptId,password:pass})});
-    const d=await r.json();
-    if(d.success){
-      errEl.style.display='none';
-      // Save to localStorage with a version key so stale sessions are cleared
-      localStorage.setItem('vaad_v2_apt', aptId);
-      localStorage.setItem('vaad_v2_pass', pass);
-      // Clear old keys from previous version
-      localStorage.removeItem('vaad_apt'); localStorage.removeItem('vaad_pass');
-      renderPersonal(d.apartment);
-      showToast(`ברוך הבא, דירה ${aptId}!`);
+  const errEl = document.getElementById('login-error');
+  errEl.style.display = 'none';
+  const btn = document.getElementById('login-btn');
+  btn.disabled = true; btn.textContent = '...';
+
+  try {
+    if(loginType === 'admin'){
+      const pass = document.getElementById('admin-password').value;
+      if(!pass){ errEl.style.display='block'; errEl.textContent='הזן סיסמת מנהל.'; return; }
+      const r = await fetch('/api/admin/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pass})});
+      const d = await r.json();
+      if(d.success){
+        window.location.href = '/admin';
+      } else {
+        errEl.style.display='block'; errEl.textContent='סיסמת מנהל שגויה.';
+      }
     } else {
-      errEl.style.display='block'; errEl.textContent=d.message||'שגיאה';
+      const aptId = document.getElementById('apt-select').value;
+      const pass  = document.getElementById('apt-password').value;
+      if(!aptId||!pass){ errEl.style.display='block'; errEl.textContent='אנא בחר דירה והזן סיסמה.'; return; }
+      const r = await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({apartmentId:aptId,password:pass})});
+      const d = await r.json();
+      if(d.success){
+        errEl.style.display='none';
+        localStorage.setItem('vaad_v2_apt', aptId);
+        localStorage.setItem('vaad_v2_pass', pass);
+        document.getElementById('login-card').style.display='none';
+        renderPersonal(d.apartment);
+        showToast(`ברוך הבא, דירה ${aptId}!`);
+      } else {
+        errEl.style.display='block'; errEl.textContent=d.message||'שגיאה';
+      }
     }
   }catch(e){ errEl.style.display='block'; errEl.textContent='שגיאת רשת'; }
   finally{ btn.disabled=false; btn.textContent='כניסה'; }
 }
 
-// ── AUTO LOGIN — only if explicitly saved with v2 key ─────────────────────
+// ── AUTO LOGIN ────────────────────────────────────────────────────────────
 async function tryAutoLogin(){
-  // Clear ALL old-version keys unconditionally
-  localStorage.removeItem('vaad_apt');
-  localStorage.removeItem('vaad_pass');
-
-  const aptId=localStorage.getItem('vaad_v2_apt');
-  const pass =localStorage.getItem('vaad_v2_pass');
-  if(!aptId||!pass) return; // nothing saved — stay logged out
-
+  localStorage.removeItem('vaad_apt'); localStorage.removeItem('vaad_pass');
+  const aptId = localStorage.getItem('vaad_v2_apt');
+  const pass  = localStorage.getItem('vaad_v2_pass');
+  if(!aptId||!pass) return;
   try{
     const r=await fetch('/api/apartment-status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({apartmentId:aptId,password:pass})});
     const d=await r.json();
     if(d.success){
       document.getElementById('apt-select').value=aptId;
+      document.getElementById('login-card').style.display='none';
       renderPersonal(d.apartment);
     } else {
-      localStorage.removeItem('vaad_v2_apt');
-      localStorage.removeItem('vaad_v2_pass');
+      localStorage.removeItem('vaad_v2_apt'); localStorage.removeItem('vaad_v2_pass');
     }
   }catch(e){}
 }
 
 document.getElementById('login-btn').addEventListener('click', doLogin);
 document.getElementById('apt-password').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
-document.getElementById('logout-btn').addEventListener('click', ()=>{
-  localStorage.removeItem('vaad_v2_apt');
-  localStorage.removeItem('vaad_v2_pass');
+document.getElementById('admin-password').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+
+document.getElementById('logout-btn').addEventListener('click',()=>{
+  localStorage.removeItem('vaad_v2_apt'); localStorage.removeItem('vaad_v2_pass');
   document.getElementById('personal-area').style.display='none';
+  document.getElementById('login-card').style.display='block';
   document.getElementById('apt-select').value='';
   document.getElementById('apt-password').value='';
   showToast('יצאת מהמערכת');
