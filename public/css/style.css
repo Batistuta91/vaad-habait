@@ -123,7 +123,7 @@ body.light .theme-toggle .toggle-thumb { background: var(--gold); transform: tra
 
 html {
   scroll-behavior: smooth;
-  font-size: 16px;
+  font-size: 18px;
 }
 
 body {
