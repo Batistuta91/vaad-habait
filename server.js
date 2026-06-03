@@ -5,23 +5,30 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Railway: use /data volume if available (persistent storage),
-// otherwise fall back to project directory (local dev)
+// Data file location:
+// 1. If Railway Volume is mounted at /data — use it (fully persistent across deploys)
+// 2. Otherwise — use project directory (data survives restarts but NOT new deploys)
+//    In this case, ensure data.json is NOT in .gitignore so it deploys with the repo.
 const DATA_DIR  = fs.existsSync('/data') ? '/data' : __dirname;
 const DATA_FILE = path.join(DATA_DIR, 'data.json');
 const SEED_FILE = path.join(__dirname, 'data.seed.json');
 
-// On first boot: if data.json doesn't exist yet, copy the seed.
-// This runs once — after that, DATA_FILE is the live file and never touched by git.
-if (!fs.existsSync(DATA_FILE)) {
-  if (fs.existsSync(SEED_FILE)) {
-    fs.copyFileSync(SEED_FILE, DATA_FILE);
-    console.log(`📋 First boot: seeded ${DATA_FILE} from data.seed.json`);
-  } else {
-    console.error('❌ No seed file found! Create data.seed.json');
-    process.exit(1);
+// If using /data volume and data.json not yet there — seed it once
+if (DATA_DIR === '/data' && !fs.existsSync(DATA_FILE)) {
+  const seedSrc = fs.existsSync(SEED_FILE) ? SEED_FILE : path.join(__dirname, 'data.json');
+  if (fs.existsSync(seedSrc)) {
+    fs.copyFileSync(seedSrc, DATA_FILE);
+    console.log(`📋 Volume first boot: seeded ${DATA_FILE}`);
   }
 }
+
+// If data.json doesn't exist at all (fresh project dir install) — copy seed
+if (!fs.existsSync(DATA_FILE) && fs.existsSync(SEED_FILE)) {
+  fs.copyFileSync(SEED_FILE, DATA_FILE);
+  console.log(`📋 Created data.json from seed`);
+}
+
+console.log(`💾 Data file: ${DATA_FILE}`);
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));

@@ -2,6 +2,6 @@ node_modules/
 .env
 npm-debug.log*
 
-# data.json contains live data — never commit it.
-# The server seeds from data.seed.json on first boot.
-data.json
+# data.json IS committed to git so settings survive deploys.
+# If you add a Railway Volume at /data, data.json there takes priority
+# and this file becomes a fallback seed only.

@@ -680,6 +680,13 @@ function renderMatrix(year){
     tbody.appendChild(tr);
   });
 
+  // Contextmenu delegation — catch right-click anywhere in a pay-cell (including child elements)
+  tbody.addEventListener('contextmenu', e=>{
+    e.preventDefault();
+    const cell = e.target.closest('.pay-cell[data-apt]');
+    if(cell) openPartialPopup(cell);
+  });
+
   // left click = toggle full/unpaid
   tbody.querySelectorAll('.pay-cell[data-apt]').forEach(cell=>{
     let pressTimer=null;
@@ -695,8 +702,12 @@ function renderMatrix(year){
       refreshMarkAllBtn(cell.closest('tr'),aptId,parseInt(cell.dataset.year),monthsToShow);
     });
 
-    // right click = partial popup (desktop)
-    cell.addEventListener('contextmenu',e=>{e.preventDefault();openPartialPopup(cell);});
+    // right click on cell or partial-btn = partial popup (desktop)
+    cell.addEventListener('contextmenu', e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      openPartialPopup(cell);
+    });
 
     // long press mobile (500ms)
     cell.addEventListener('touchstart',()=>{
