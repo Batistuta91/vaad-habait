@@ -1,7 +1,7 @@
 /* ─── FONTS ─────────────────────────────────────────────────────────────── */
 @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&family=Frank+Ruhl+Libre:wght@400;700;900&display=swap');
 
-/* ─── VARIABLES ──────────────────────────────────────────────────────────── */
+/* ─── VARIABLES — DARK (default) ─────────────────────────────────────────── */
 :root {
   --bg: #0f1117;
   --bg2: #161922;
@@ -17,8 +17,8 @@
 
   --gold: #f5c842;
   --gold-dim: rgba(245,200,66,0.15);
-  --green: #22c55e;
-  --green-dim: rgba(34,197,94,0.12);
+  --green: #16a34a;
+  --green-dim: rgba(22,163,74,0.12);
   --red: #ef4444;
   --red-dim: rgba(239,68,68,0.12);
   --blue: #6366f1;
@@ -30,6 +30,93 @@
   --shadow-lg: 0 8px 48px rgba(0,0,0,0.6);
   --transition: 0.2s ease;
 }
+
+/* ─── VARIABLES — LIGHT ──────────────────────────────────────────────────── */
+body.light {
+  --bg: #f5f6fa;
+  --bg2: #eef0f6;
+  --bg3: #e4e7f0;
+  --card: #ffffff;
+  --card2: #f0f2f9;
+  --border: rgba(0,0,0,0.09);
+  --border-strong: rgba(0,0,0,0.16);
+
+  --text: #1a1e2e;
+  --text-muted: #5a6080;
+  --text-dim: #9aa0bc;
+
+  --gold: #c49000;
+  --gold-dim: rgba(196,144,0,0.12);
+  --green: #16a34a;
+  --green-dim: rgba(22,163,74,0.10);
+  --red: #dc2626;
+  --red-dim: rgba(220,38,38,0.09);
+  --blue: #4f46e5;
+  --blue-dim: rgba(79,70,229,0.10);
+
+  --shadow: 0 2px 16px rgba(0,0,0,0.10);
+  --shadow-lg: 0 6px 32px rgba(0,0,0,0.14);
+}
+
+/* light-mode specific overrides */
+body.light .site-header {
+  background: #ffffff;
+  box-shadow: 0 1px 0 var(--border);
+}
+body.light .page-hero {
+  background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(196,144,0,0.07) 0%, transparent 70%);
+}
+body.light .admin-login-overlay { background: var(--bg); }
+body.light .pay-cell.unpaid { background: rgba(220,38,38,0.06); }
+body.light .month-chip.paid { background: rgba(22,163,74,0.12); }
+body.light .month-chip.unpaid { background: rgba(220,38,38,0.08); }
+body.light .apt-tile.clear { background: rgba(22,163,74,0.06); }
+body.light .apt-tile.owed { background: rgba(220,38,38,0.06); }
+
+/* ─── THEME TOGGLE BUTTON ────────────────────────────────────────────────── */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  border-radius: 50px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg2);
+  color: var(--text-muted);
+  font-family: 'Heebo', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+.theme-toggle:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: var(--gold-dim);
+}
+.theme-toggle .toggle-track {
+  width: 32px;
+  height: 18px;
+  border-radius: 50px;
+  background: var(--bg3);
+  border: 1px solid var(--border-strong);
+  position: relative;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.theme-toggle .toggle-thumb {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  transition: transform 0.2s, background 0.2s;
+}
+body.light .theme-toggle .toggle-track { background: var(--gold-dim); border-color: var(--gold); }
+body.light .theme-toggle .toggle-thumb { background: var(--gold); transform: translateX(-14px); }
 
 /* ─── RESET ──────────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }

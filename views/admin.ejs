@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ממשק מנהל — <%= buildingName %></title>
   <link rel="stylesheet" href="/css/style.css">
+  <script>
+    if(localStorage.getItem('vaad_theme')==='light') document.documentElement.classList.add('pre-light');
+  </script>
+  <style>.pre-light body, html.pre-light body { background:#f5f6fa !important; }</style>
   <style>
     .tabs{display:flex;gap:4px;margin-bottom:24px;flex-wrap:wrap;}
     .tab-btn{padding:9px 18px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg2);color:var(--text-muted);font-family:'Heebo',sans-serif;font-size:0.88rem;font-weight:600;cursor:pointer;transition:var(--transition);}
@@ -84,7 +88,14 @@
       <div class="logo-icon">🔐</div>
       <div class="logo-text">ממשק מנהל <span><%= buildingName %></span></div>
     </div>
-    <nav class="header-nav"><a href="/">← לממשק דיירים</a></nav>
+    <nav class="header-nav" style="display:flex;align-items:center;gap:10px;">
+      <button class="theme-toggle" id="theme-toggle-btn" aria-label="החלף ערכת צבעים">
+        <span id="theme-icon">🌙</span>
+        <div class="toggle-track"><div class="toggle-thumb"></div></div>
+        <span id="theme-label">כהה</span>
+      </button>
+      <a href="/">← לממשק דיירים</a>
+    </nav>
   </div>
 </header>
 
@@ -273,6 +284,23 @@
 <script>
 // ═══ STATE ════════════════════════════════════════════════════════════════
 let adminPassword = '';
+
+// ═══ THEME ════════════════════════════════════════════════════════════════
+(function(){
+  const saved = localStorage.getItem('vaad_theme') || 'dark';
+  applyTheme(saved);
+})();
+function applyTheme(mode){
+  document.body.classList.toggle('light', mode==='light');
+  const icon  = document.getElementById('theme-icon');
+  const label = document.getElementById('theme-label');
+  if(icon)  icon.textContent  = mode==='light' ? '☀️' : '🌙';
+  if(label) label.textContent = mode==='light' ? 'בהיר' : 'כהה';
+  localStorage.setItem('vaad_theme', mode);
+}
+document.getElementById('theme-toggle-btn').addEventListener('click',()=>{
+  applyTheme(document.body.classList.contains('light') ? 'dark' : 'light');
+});
 let currentYear   = <%= currentYear %>;
 let currentMonth  = <%= currentMonth %>;
 let activeYear    = <%= currentYear %>;
