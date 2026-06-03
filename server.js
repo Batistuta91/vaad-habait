@@ -9,13 +9,18 @@ const PORT = process.env.PORT || 3000;
 // otherwise fall back to project directory (local dev)
 const DATA_DIR  = fs.existsSync('/data') ? '/data' : __dirname;
 const DATA_FILE = path.join(DATA_DIR, 'data.json');
-const SEED_FILE = path.join(__dirname, 'data.json'); // always present in repo
+const SEED_FILE = path.join(__dirname, 'data.seed.json');
 
-// On first boot (or after deploy), if /data/data.json doesn't exist yet,
-// copy the seed file so we don't start with empty data
+// On first boot: if data.json doesn't exist yet, copy the seed.
+// This runs once — after that, DATA_FILE is the live file and never touched by git.
 if (!fs.existsSync(DATA_FILE)) {
-  fs.copyFileSync(SEED_FILE, DATA_FILE);
-  console.log(`📋 Seeded data from ${SEED_FILE} → ${DATA_FILE}`);
+  if (fs.existsSync(SEED_FILE)) {
+    fs.copyFileSync(SEED_FILE, DATA_FILE);
+    console.log(`📋 First boot: seeded ${DATA_FILE} from data.seed.json`);
+  } else {
+    console.error('❌ No seed file found! Create data.seed.json');
+    process.exit(1);
+  }
 }
 
 app.set('view engine', 'ejs');
@@ -154,7 +159,8 @@ app.get('/admin', (req, res) => {
     years:               data.years||[2025],
     currentYear:         now.getFullYear(),
     currentMonth:        now.getMonth()+1,
-    MONTHS
+    MONTHS,
+    cssVersion:          Date.now()
   });
 });
 
