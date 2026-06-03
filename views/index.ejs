@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><%= buildingName %></title>
-  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/style.css?v=<%=cssVersion%>">
   <script>
     // Apply theme BEFORE render to prevent flash — no auto-login here
     if(localStorage.getItem('vaad_theme')==='light') document.documentElement.classList.add('pre-light');

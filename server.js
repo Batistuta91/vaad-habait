@@ -92,7 +92,8 @@ app.get('/', (req, res) => {
     publicApartments:    data.apartments.map(a => { const d=calcDebt(a,data); return {id:a.id,debt:d.total}; }),
     specialCharges:      data.specialCharges||[],
     totalIncome, totalExpense, balance, openingBalance, recentTx,
-    currentYear: now.getFullYear(), currentMonth: now.getMonth()+1, MONTHS
+    currentYear: now.getFullYear(), currentMonth: now.getMonth()+1, MONTHS,
+    cssVersion: Date.now()
   });
 });
 
