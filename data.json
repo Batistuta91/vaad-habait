@@ -3,6 +3,7 @@
   "buildingAddress": "הנרייטה סולד 32, פתח תקווה",
   "monthlyFee": 350,
   "showPublicDebts": true,
+  "showFinancialReport": true,
   "bankDetails": {
     "bank": "בנק מסד",
     "branch": "509",
@@ -28,6 +29,7 @@
       "active": true
     }
   ],
+  "transactions": [],
   "apartments": [
     { "id": 1,  "ownerName": "", "password": "1234", "payments": {}, "note": "" },
     { "id": 2,  "ownerName": "", "password": "1234", "payments": {}, "note": "" },

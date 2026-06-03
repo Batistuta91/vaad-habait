@@ -13,67 +13,73 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 function readData() { return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')); }
-function writeData(data) { fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf8'); }
+function writeData(d) { fs.writeFileSync(DATA_FILE, JSON.stringify(d, null, 2), 'utf8'); }
 
 const MONTHS = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
 
 function calcDebt(apt, data) {
   const now = new Date();
-  const currentYear  = now.getFullYear();
-  const currentMonth = now.getMonth() + 1;
+  const cy = now.getFullYear(), cm = now.getMonth() + 1;
   let monthlyDebt = 0;
   for (const year of (data.years || [])) {
-    const monthsToCheck = year < currentYear ? 12 : year === currentYear ? currentMonth : 0;
-    for (let m = 1; m <= monthsToCheck; m++) {
+    const months = year < cy ? 12 : year === cy ? cm : 0;
+    for (let m = 1; m <= months; m++) {
       const raw = apt.payments[`${year}-${m}`];
-      const paidAmt = typeof raw === 'boolean' ? (raw ? (data.monthlyFee||0) : 0) : (Number(raw)||0);
-      monthlyDebt += Math.max(0, (data.monthlyFee||0) - paidAmt);
+      const paid = typeof raw === 'boolean' ? (raw ? (data.monthlyFee||0) : 0) : (Number(raw)||0);
+      monthlyDebt += Math.max(0, (data.monthlyFee||0) - paid);
     }
   }
   let specialDebt = 0;
   for (const sc of (data.specialCharges||[])) {
-    const entry = (sc.apartments||[]).find(a => a.id === apt.id);
-    if (entry && !entry.paid) specialDebt += sc.costPerApartment||0;
+    const e = (sc.apartments||[]).find(a => a.id === apt.id);
+    if (e && !e.paid) specialDebt += sc.costPerApartment||0;
   }
   return { monthlyDebt, specialDebt, total: monthlyDebt + specialDebt };
 }
 
 function buildMonthlyStatus(apt, data) {
   const now = new Date();
-  const status = [];
+  const res = [];
   for (const year of (data.years||[])) {
     const months = year < now.getFullYear() ? 12 : year === now.getFullYear() ? now.getMonth()+1 : 0;
     for (let m = 1; m <= months; m++) {
       const raw = apt.payments[`${year}-${m}`];
       const paidAmt = typeof raw === 'boolean' ? (raw ? (data.monthlyFee||0) : 0) : (Number(raw)||0);
       const state = paidAmt <= 0 ? 'unpaid' : paidAmt >= (data.monthlyFee||0) ? 'full' : 'partial';
-      status.push({ year, month: m, label: MONTHS[m-1]+' '+year, state, paidAmount: paidAmt, fullAmount: data.monthlyFee });
+      res.push({ year, month: m, label: MONTHS[m-1]+' '+year, state, paidAmount: paidAmt, fullAmount: data.monthlyFee });
     }
   }
-  return status;
+  return res;
 }
 
-// ── TENANT ROUTES ────────────────────────────────────────────────────────────
-
+// ── TENANT ────────────────────────────────────────────────────────────────────
 app.get('/', (req, res) => {
   const data = readData();
   const now  = new Date();
-  const publicApartments = data.apartments.map(a => {
-    const d = calcDebt(a, data);
-    return { id: a.id, debt: d.total };
-  });
+
+  // Financial summary (income - expense)
+  const transactions = data.transactions || [];
+  const totalIncome  = transactions.filter(t=>t.type==='income').reduce((s,t)=>s+(t.amount||0),0);
+  const totalExpense = transactions.filter(t=>t.type==='expense').reduce((s,t)=>s+(t.amount||0),0);
+  const balance      = totalIncome - totalExpense;
+
+  // Recent transactions (last 10) for public display
+  const recentTx = [...transactions]
+    .sort((a,b)=>new Date(b.date)-new Date(a.date))
+    .slice(0, 10);
+
   res.render('index', {
-    buildingName:    data.buildingName,
-    buildingAddress: data.buildingAddress||'',
-    bankDetails:     data.bankDetails,
-    payboxLink:      data.payboxLink,
-    showPublicDebts: data.showPublicDebts !== false,
-    announcements:   (data.announcements||[]).filter(a=>a.active),
-    publicApartments,
-    specialCharges:  data.specialCharges||[],
-    currentYear:     now.getFullYear(),
-    currentMonth:    now.getMonth()+1,
-    MONTHS
+    buildingName:        data.buildingName,
+    buildingAddress:     data.buildingAddress||'',
+    bankDetails:         data.bankDetails,
+    payboxLink:          data.payboxLink,
+    showPublicDebts:     data.showPublicDebts !== false,
+    showFinancialReport: data.showFinancialReport !== false,
+    announcements:       (data.announcements||[]).filter(a=>a.active),
+    publicApartments:    data.apartments.map(a => { const d=calcDebt(a,data); return {id:a.id,debt:d.total}; }),
+    specialCharges:      data.specialCharges||[],
+    totalIncome, totalExpense, balance, recentTx,
+    currentYear: now.getFullYear(), currentMonth: now.getMonth()+1, MONTHS
   });
 });
 
@@ -81,17 +87,17 @@ app.post('/api/login', (req, res) => {
   const { apartmentId, password } = req.body;
   const data = readData();
   const apt  = data.apartments.find(a => a.id === parseInt(apartmentId));
-  if (!apt)                  return res.json({ success: false, message: 'דירה לא נמצאה' });
+  if (!apt)                      return res.json({ success: false, message: 'דירה לא נמצאה' });
   if (apt.password !== password) return res.json({ success: false, message: 'סיסמה שגויה' });
   const debt = calcDebt(apt, data);
-  const mySpecial = (data.specialCharges||[]).map(sc => {
-    const entry = (sc.apartments||[]).find(a => a.id === apt.id);
-    return { name: sc.name, description: sc.description, costPerApartment: sc.costPerApartment, paid: entry ? entry.paid : false };
-  });
   res.json({ success: true, apartment: {
     id: apt.id, ownerName: apt.ownerName||'',
     debt: debt.total, monthlyDebt: debt.monthlyDebt, specialDebt: debt.specialDebt,
-    note: apt.note, monthlyStatus: buildMonthlyStatus(apt, data), specialCharges: mySpecial
+    note: apt.note, monthlyStatus: buildMonthlyStatus(apt, data),
+    specialCharges: (data.specialCharges||[]).map(sc => {
+      const e=(sc.apartments||[]).find(a=>a.id===apt.id);
+      return { name:sc.name, description:sc.description, costPerApartment:sc.costPerApartment, paid:e?e.paid:false };
+    })
   }});
 });
 
@@ -101,61 +107,62 @@ app.post('/api/apartment-status', (req, res) => {
   const apt  = data.apartments.find(a => a.id === parseInt(apartmentId));
   if (!apt || apt.password !== password) return res.json({ success: false });
   const debt = calcDebt(apt, data);
-  const mySpecial = (data.specialCharges||[]).map(sc => {
-    const entry = (sc.apartments||[]).find(a => a.id === apt.id);
-    return { name: sc.name, description: sc.description, costPerApartment: sc.costPerApartment, paid: entry ? entry.paid : false };
-  });
   res.json({ success: true, apartment: {
     id: apt.id, ownerName: apt.ownerName||'',
     debt: debt.total, monthlyDebt: debt.monthlyDebt, specialDebt: debt.specialDebt,
-    note: apt.note, monthlyStatus: buildMonthlyStatus(apt, data), specialCharges: mySpecial
+    note: apt.note, monthlyStatus: buildMonthlyStatus(apt, data),
+    specialCharges: (data.specialCharges||[]).map(sc => {
+      const e=(sc.apartments||[]).find(a=>a.id===apt.id);
+      return { name:sc.name, description:sc.description, costPerApartment:sc.costPerApartment, paid:e?e.paid:false };
+    })
   }});
 });
 
-// ── ADMIN ROUTES ─────────────────────────────────────────────────────────────
-
+// ── ADMIN ─────────────────────────────────────────────────────────────────────
 app.get('/admin', (req, res) => {
   const data = readData();
   const now  = new Date();
   res.render('admin', {
-    buildingName:    data.buildingName,
-    buildingAddress: data.buildingAddress||'',
-    monthlyFee:      data.monthlyFee||350,
-    showPublicDebts: data.showPublicDebts !== false,
-    bankDetails:     data.bankDetails,
-    payboxLink:      data.payboxLink,
-    apartments:      data.apartments,
-    specialCharges:  data.specialCharges||[],
-    announcements:   data.announcements||[],
-    years:           data.years||[2025],
-    currentYear:     now.getFullYear(),
-    currentMonth:    now.getMonth()+1,
+    buildingName:        data.buildingName,
+    buildingAddress:     data.buildingAddress||'',
+    monthlyFee:          data.monthlyFee||350,
+    showPublicDebts:     data.showPublicDebts !== false,
+    showFinancialReport: data.showFinancialReport !== false,
+    bankDetails:         data.bankDetails,
+    payboxLink:          data.payboxLink,
+    apartments:          data.apartments,
+    specialCharges:      data.specialCharges||[],
+    announcements:       data.announcements||[],
+    transactions:        data.transactions||[],
+    years:               data.years||[2025],
+    currentYear:         now.getFullYear(),
+    currentMonth:        now.getMonth()+1,
     MONTHS
   });
 });
 
 app.post('/api/admin/verify', (req, res) => {
-  const { password } = req.body;
   const data = readData();
-  res.json({ success: password === data.adminPassword });
+  res.json({ success: req.body.password === data.adminPassword });
 });
 
 app.post('/api/admin/save', (req, res) => {
-  const { adminPassword, apartments, specialCharges, settings, announcements } = req.body;
+  const { adminPassword, apartments, specialCharges, settings, announcements, transactions } = req.body;
   const data = readData();
   if (adminPassword !== data.adminPassword)
     return res.status(403).json({ success: false, message: 'אין הרשאה' });
 
   if (settings) {
-    if (settings.buildingName !== undefined)    data.buildingName    = settings.buildingName;
+    if (settings.buildingName  !== undefined) data.buildingName  = settings.buildingName;
     if (settings.buildingAddress !== undefined) data.buildingAddress = settings.buildingAddress;
-    if (settings.monthlyFee)      data.monthlyFee      = parseInt(settings.monthlyFee);
+    if (settings.monthlyFee)    data.monthlyFee    = parseInt(settings.monthlyFee);
     if (settings.showPublicDebts !== undefined) data.showPublicDebts = settings.showPublicDebts;
+    if (settings.showFinancialReport !== undefined) data.showFinancialReport = settings.showFinancialReport;
     if (settings.newAdminPassword && settings.newAdminPassword.length >= 4)
       data.adminPassword = settings.newAdminPassword;
-    if (settings.bankDetails)     data.bankDetails = { ...data.bankDetails, ...settings.bankDetails };
+    if (settings.bankDetails)   data.bankDetails = { ...data.bankDetails, ...settings.bankDetails };
     if (settings.payboxLink !== undefined) data.payboxLink = settings.payboxLink;
-    if (settings.years)           data.years = settings.years;
+    if (settings.years)         data.years = settings.years;
   }
 
   if (apartments && Array.isArray(apartments)) {
@@ -163,7 +170,7 @@ app.post('/api/admin/save', (req, res) => {
       const ex = data.apartments.find(a => a.id === inc.id);
       if (!ex) return;
       ex.ownerName = inc.ownerName !== undefined ? inc.ownerName : ex.ownerName;
-      ex.note      = inc.note !== undefined ? inc.note : ex.note;
+      ex.note      = inc.note      !== undefined ? inc.note      : ex.note;
       if (inc.password && inc.password.length >= 4) ex.password = inc.password;
       if (inc.payments !== undefined) ex.payments = inc.payments;
     });
@@ -180,6 +187,18 @@ app.post('/api/admin/save', (req, res) => {
   if (announcements !== undefined) {
     data.announcements = announcements.map(a => ({
       id: a.id, title: a.title||'', body: a.body||'', icon: a.icon||'📢', active: !!a.active
+    }));
+  }
+
+  if (transactions !== undefined) {
+    data.transactions = transactions.map(t => ({
+      id:          t.id,
+      type:        t.type === 'income' ? 'income' : 'expense',
+      category:    t.category||'',
+      description: t.description||'',
+      amount:      Math.abs(parseInt(t.amount)||0),
+      date:        t.date||'',
+      note:        t.note||''
     }));
   }
 
@@ -220,6 +239,5 @@ app.delete('/api/admin/special/:id', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`\n✅ ועד בית — http://localhost:${PORT}`);
-  console.log(`   מנהל: http://localhost:${PORT}/admin\n`);
+  console.log(`\n✅  http://localhost:${PORT}  |  /admin\n`);
 });

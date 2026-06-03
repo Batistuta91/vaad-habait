@@ -106,6 +106,15 @@
   .add-row .fg label{font-size:0.78rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;}
   .add-row .fg input{background:var(--bg);border:1px solid var(--border-strong);border-radius:6px;color:var(--text);font-family:'Heebo',sans-serif;font-size:0.9rem;padding:9px 12px;direction:rtl;width:100%;}
   .add-row .fg input:focus{outline:none;border-color:var(--gold);}
+
+  /* FINANCE TABLE */
+  .tx-admin-table{width:100%;border-collapse:collapse;font-size:0.85rem;}
+  .tx-admin-table th{background:var(--bg);color:var(--text-muted);font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;padding:10px 14px;text-align:right;border-bottom:2px solid var(--border);white-space:nowrap;}
+  .tx-admin-table td{padding:10px 14px;border-bottom:1px solid var(--border);text-align:right;vertical-align:middle;}
+  .tx-admin-table tr:last-child td{border-bottom:none;}
+  .tx-admin-table tr:hover td{background:rgba(255,255,255,0.02);}
+  .tx-income{color:var(--green);font-weight:700;}
+  .tx-expense{color:var(--red);font-weight:700;}
   </style>
 </head>
 <body>
@@ -163,6 +172,7 @@
       <button class="tab-btn active" data-tab="payments">📅 תשלומים</button>
       <button class="tab-btn" data-tab="apartments">🏠 דירות</button>
       <button class="tab-btn" data-tab="special">⚡ גביות מיוחדות</button>
+      <button class="tab-btn" data-tab="finance">💰 הכנסות/הוצאות</button>
       <button class="tab-btn" data-tab="announcements">📢 הודעות</button>
       <button class="tab-btn" data-tab="settings">⚙️ הגדרות</button>
     </div>
@@ -304,6 +314,16 @@
               <span class="slider"></span>
             </label>
           </div>
+          <div class="toggle-row">
+            <div>
+              <div class="t-label">הצג דו"ח פיננסי</div>
+              <div class="t-desc">האם להציג את הכנסות/הוצאות הקופה בדף הראשי</div>
+            </div>
+            <label class="ios-toggle">
+              <input type="checkbox" id="set-show-finance" <%=showFinancialReport?'checked':'  '%>>
+              <span class="slider"></span>
+            </label>
+          </div>
         </div>
       </div>
       <div class="card" style="margin-bottom:16px;">
@@ -324,6 +344,58 @@
         <div class="settings-grid">
           <div class="form-group"><label>סיסמה חדשה (4+ תווים)</label><input type="password" id="set-new-pass" placeholder="השאר ריק כדי לא לשנות"></div>
           <div class="form-group"><label>אימות</label><input type="password" id="set-new-pass2" placeholder="הזן שוב"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── FINANCE ───────────────────────────────────────────────── -->
+    <div class="tab-pane" id="tab-finance">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;" id="fin-summary-admin">
+        <div class="sum-card"><div class="sum-val" id="fin-income" style="color:var(--green);">₪0</div><div class="sum-lbl">סה"כ הכנסות</div></div>
+        <div class="sum-card"><div class="sum-val" id="fin-expense" style="color:var(--red);">₪0</div><div class="sum-lbl">סה"כ הוצאות</div></div>
+        <div class="sum-card"><div class="sum-val" id="fin-balance" style="color:var(--gold);">₪0</div><div class="sum-lbl">יתרה</div></div>
+      </div>
+
+      <!-- Add transaction form -->
+      <div class="add-row">
+        <div class="fg" style="max-width:120px;">
+          <label>סוג</label>
+          <select id="tx-type" style="background:var(--bg);border:1px solid var(--border-strong);border-radius:6px;color:var(--text);font-family:Heebo,sans-serif;font-size:0.9rem;padding:9px 12px;direction:rtl;width:100%;">
+            <option value="income">💚 הכנסה</option>
+            <option value="expense">🔴 הוצאה</option>
+          </select>
+        </div>
+        <div class="fg"><label>קטגוריה</label><input type="text" id="tx-cat" placeholder="ועד, תיקון, גינון..."></div>
+        <div class="fg"><label>תיאור</label><input type="text" id="tx-desc" placeholder="פירוט הפעולה"></div>
+        <div class="fg" style="max-width:130px;"><label>סכום (₪)</label><input type="number" id="tx-amount" placeholder="0" min="0"></div>
+        <div class="fg" style="max-width:160px;"><label>תאריך</label><input type="date" id="tx-date" style="background:var(--bg);border:1px solid var(--border-strong);border-radius:6px;color:var(--text);font-size:0.9rem;padding:9px 12px;width:100%;"></div>
+        <div class="fg" style="flex:none;"><label style="visibility:hidden;">x</label><button class="btn btn-primary" id="add-tx-btn">+ הוסף</button></div>
+      </div>
+
+      <!-- Transactions table -->
+      <div class="card" style="padding:0;">
+        <div style="overflow-x:auto;">
+          <table class="tx-admin-table" id="tx-table">
+            <thead>
+              <tr>
+                <th>תאריך</th><th>סוג</th><th>קטגוריה</th><th>תיאור</th><th>סכום</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="tx-body">
+              <% (transactions||[]).slice().sort((a,b)=>new Date(b.date)-new Date(a.date)).forEach(tx=>{ %>
+              <tr data-tx-id="<%=tx.id%>">
+                <td style="color:var(--text-muted);font-size:0.8rem;white-space:nowrap;"><%=tx.date||'—'%></td>
+                <td><span class="badge <%=tx.type==='income'?'badge-green':'badge-red'%>"><%=tx.type==='income'?'הכנסה':'הוצאה'%></span></td>
+                <td><%=tx.category||'—'%></td>
+                <td><%=tx.description||'—'%></td>
+                <td class="<%=tx.type==='income'?'tx-income':'tx-expense'%>" style="font-weight:700;">
+                  <%=tx.type==='income'?'+':'-'%>₪<%=(tx.amount||0).toLocaleString()%>
+                </td>
+                <td><button class="btn btn-danger btn-sm delete-tx-btn" style="padding:4px 10px;">🗑</button></td>
+              </tr>
+              <% }) %>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -359,6 +431,9 @@ let activeYear    = <%=currentYear%>;
 const serverApartments = <%-JSON.stringify(apartments)%>;
 const serverYears      = <%-JSON.stringify(years)%>;
 let serverMonthlyFee   = <%=monthlyFee%>;
+
+// transactions in memory
+let txList = <%-JSON.stringify(transactions||[])%>;
 
 let payments = {};
 serverApartments.forEach(a=>{
@@ -415,6 +490,7 @@ async function doAdminLogin(){
       document.getElementById('admin-panel').classList.add('visible');
       renderMatrix(activeYear);
       updateSummary();
+      calcFinSummary();
       showToast('ברוך הבא!');
     } else {
       const el=document.getElementById('admin-login-error');
@@ -708,6 +784,64 @@ document.getElementById('add-ann-btn').addEventListener('click',()=>{
   document.getElementById('ann-list').appendChild(div);
 });
 
+// ═══ FINANCE ══════════════════════════════════════════════════════════════
+function calcFinSummary(){
+  const income  = txList.filter(t=>t.type==='income').reduce((s,t)=>s+(t.amount||0),0);
+  const expense = txList.filter(t=>t.type==='expense').reduce((s,t)=>s+(t.amount||0),0);
+  const balance = income - expense;
+  document.getElementById('fin-income').textContent  = '₪'+income.toLocaleString();
+  document.getElementById('fin-expense').textContent = '₪'+expense.toLocaleString();
+  const balEl = document.getElementById('fin-balance');
+  balEl.textContent = (balance>=0?'+':'') + '₪'+Math.abs(balance).toLocaleString();
+  balEl.style.color = balance>=0 ? 'var(--gold)' : 'var(--red)';
+}
+
+function renderTxRow(tx){
+  const tr=document.createElement('tr');
+  tr.dataset.txId=tx.id;
+  tr.innerHTML=`
+    <td style="color:var(--text-muted);font-size:0.8rem;white-space:nowrap;">${tx.date||'—'}</td>
+    <td><span class="badge ${tx.type==='income'?'badge-green':'badge-red'}">${tx.type==='income'?'הכנסה':'הוצאה'}</span></td>
+    <td>${tx.category||'—'}</td>
+    <td>${tx.description||'—'}</td>
+    <td class="${tx.type==='income'?'tx-income':'tx-expense'}">${tx.type==='income'?'+':'-'}₪${(tx.amount||0).toLocaleString()}</td>
+    <td><button class="btn btn-danger btn-sm delete-tx-btn" style="padding:4px 10px;">🗑</button></td>`;
+  return tr;
+}
+
+document.getElementById('add-tx-btn').addEventListener('click',()=>{
+  const type   = document.getElementById('tx-type').value;
+  const cat    = document.getElementById('tx-cat').value.trim();
+  const desc   = document.getElementById('tx-desc').value.trim();
+  const amount = parseInt(document.getElementById('tx-amount').value)||0;
+  const date   = document.getElementById('tx-date').value;
+  if(!amount){ showToast('הזן סכום','error'); return; }
+  if(!desc)  { showToast('הזן תיאור','error'); return; }
+  const tx = { id:'tx_'+Date.now(), type, category:cat, description:desc, amount, date };
+  txList.push(tx);
+  // Insert sorted by date desc
+  const sorted=[...txList].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const tbody=document.getElementById('tx-body');
+  tbody.innerHTML='';
+  sorted.forEach(t=>tbody.appendChild(renderTxRow(t)));
+  calcFinSummary();
+  ['tx-cat','tx-desc','tx-amount'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('tx-date').value='';
+  showToast(`${type==='income'?'הכנסה':'הוצאה'} נוספה!`);
+});
+
+document.getElementById('tx-body').addEventListener('click',e=>{
+  const btn=e.target.closest('.delete-tx-btn');
+  if(!btn) return;
+  const row=btn.closest('tr');
+  const id=row.dataset.txId;
+  if(!confirm('למחוק פעולה זו?')) return;
+  txList=txList.filter(t=>t.id!==id);
+  row.remove();
+  calcFinSummary();
+  showToast('נמחק');
+});
+
 // SAVE ALL
 async function saveAll(){
   const btn=document.getElementById('save-all-btn');
@@ -764,10 +898,11 @@ async function saveAll(){
 
   // Settings
   const settings={
-    buildingName:    document.getElementById('set-bname').value,
-    buildingAddress: document.getElementById('set-baddress').value,
-    monthlyFee:      document.getElementById('set-fee').value,
-    showPublicDebts: document.getElementById('set-show-debts').checked,
+    buildingName:        document.getElementById('set-bname').value,
+    buildingAddress:     document.getElementById('set-baddress').value,
+    monthlyFee:          document.getElementById('set-fee').value,
+    showPublicDebts:     document.getElementById('set-show-debts').checked,
+    showFinancialReport: document.getElementById('set-show-finance').checked,
     bankDetails:{
       bank:        document.getElementById('set-bank').value,
       branch:      document.getElementById('set-branch').value,
@@ -781,7 +916,7 @@ async function saveAll(){
 
   try{
     const r=await fetch('/api/admin/save',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({adminPassword,apartments,specialCharges,settings,announcements})});
+      body:JSON.stringify({adminPassword,apartments,specialCharges,settings,announcements,transactions:txList})});
     const d=await r.json();
     if(d.success){
       if(np1) adminPassword=np1;
