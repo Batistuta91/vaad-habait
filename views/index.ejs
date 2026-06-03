@@ -592,6 +592,8 @@ async function doLogin(){
       const r = await fetch('/api/admin/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pass})});
       const d = await r.json();
       if(d.success){
+        // Store password in sessionStorage so admin page auto-logs in
+        sessionStorage.setItem('vaad_admin_pass', pass);
         window.location.href = '/admin';
       } else {
         errEl.style.display='block'; errEl.textContent='סיסמת מנהל שגויה.';

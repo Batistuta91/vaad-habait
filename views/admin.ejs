@@ -620,6 +620,16 @@ async function doAdminLogin(){
 document.getElementById('admin-login-btn').addEventListener('click',doAdminLogin);
 document.getElementById('admin-pass-input').addEventListener('keydown',e=>{if(e.key==='Enter')doAdminLogin();});
 
+// Auto-login if coming from main login page
+(function(){
+  const stored = sessionStorage.getItem('vaad_admin_pass');
+  if(stored){
+    sessionStorage.removeItem('vaad_admin_pass');
+    document.getElementById('admin-pass-input').value = stored;
+    doAdminLogin();
+  }
+})();
+
 // CALC DEBT
 function calcAptDebt(aptId){
   let debt=0;
