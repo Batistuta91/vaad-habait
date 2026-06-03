@@ -111,39 +111,43 @@
   .ios-toggle input:checked + .slider{background:var(--green);border-color:var(--green);}
   .ios-toggle input:checked + .slider::before{transform:translateX(-18px);}
 
-  /* PARTIAL POPUP */
-  .partial-popup{
-    display:none;position:fixed;z-index:200;
-    background:var(--card);border:1px solid var(--border-strong);
-    border-radius:var(--radius);box-shadow:var(--shadow-lg);
-    min-width:260px;max-width:320px;
-    animation:popIn 0.15s ease;
+  /* partial popup removed — using inline editing */
+
+  /* ── INLINE PARTIAL EDITOR (replaces popup) ── */
+  .pay-cell.editing{
+    height:auto!important;min-height:40px;
+    background:var(--card)!important;
+    outline:2px solid var(--gold);
+    outline-offset:-2px;
+    z-index:10;position:relative;
+    overflow:visible;
   }
-  @keyframes popIn{from{opacity:0;transform:scale(0.93) translateY(-6px);}to{opacity:1;transform:scale(1) translateY(0);}}
-  .partial-popup.show{display:block;}
-  .popup-inner{padding:20px;}
-  .popup-header{display:flex;align-items:flex-start;gap:10px;margin-bottom:16px;}
-  .popup-icon{font-size:1.4rem;flex-shrink:0;margin-top:2px;}
-  .popup-amount-wrap{
-    display:flex;align-items:center;
-    background:var(--bg2);border:2px solid var(--gold);border-radius:var(--radius-sm);
-    padding:0 14px;margin-bottom:12px;gap:8px;
+  .inline-editor{
+    display:flex;flex-direction:column;align-items:center;
+    gap:3px;padding:4px 3px;width:100%;
   }
-  .popup-currency{font-size:1.3rem;font-weight:700;color:var(--gold);}
-  .popup-amount-wrap input{
-    background:transparent;border:none;outline:none;
-    color:var(--text);font-family:'Heebo',sans-serif;font-size:1.5rem;font-weight:700;
-    padding:12px 0;width:100%;direction:rtl;text-align:right;
+  .ie-label{font-size:0.58rem;color:var(--text-muted);white-space:nowrap;}
+  .ie-input{
+    width:100%;background:var(--bg2);border:1px solid var(--gold);
+    border-radius:4px;color:var(--text);font-family:'Heebo',sans-serif;
+    font-size:0.85rem;font-weight:700;padding:3px 4px;
+    text-align:center;direction:ltr;
   }
-  .popup-amount-wrap input::placeholder{color:var(--text-dim);}
-  .popup-quick-btns{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
-  .popup-quick-btn{
-    padding:5px 12px;border-radius:50px;font-size:0.8rem;font-weight:600;
-    cursor:pointer;border:1px solid var(--border-strong);background:var(--bg2);
-    color:var(--text-muted);transition:var(--transition);font-family:'Heebo',sans-serif;
+  .ie-input:focus{outline:none;}
+  .ie-btns{display:flex;gap:2px;width:100%;justify-content:center;}
+  .ie-btn{
+    flex:1;padding:3px 2px;border:none;border-radius:3px;
+    font-size:0.65rem;cursor:pointer;font-family:'Heebo',sans-serif;font-weight:700;
+    transition:opacity 0.1s;
   }
-  .popup-quick-btn:hover{background:var(--gold-dim);border-color:var(--gold);color:var(--gold);}
-  .popup-actions{display:flex;gap:8px;justify-content:flex-end;}
+  .ie-btn:hover{opacity:0.8;}
+  .ie-cancel{background:var(--red-dim);color:var(--red);}
+  .ie-full  {background:var(--green-dim);color:var(--green);}
+  .ie-save  {background:var(--gold-dim);color:var(--gold);}
+  @media(max-width:640px){
+    .ie-input{font-size:1rem;padding:5px 4px;}
+    .ie-btn{font-size:0.72rem;padding:5px 2px;}
+  }
 
   /* SUMMARY */
   .sum-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:24px;}
@@ -514,29 +518,7 @@
   </div>
 </div>
 
-<!-- PARTIAL POPUP -->
-<div class="partial-popup" id="partial-popup">
-  <div class="popup-inner">
-    <div class="popup-header">
-      <span class="popup-icon">✏️</span>
-      <div>
-        <div id="popup-title" style="font-weight:700;font-size:0.95rem;color:var(--text);"></div>
-        <div id="popup-subtitle" style="font-size:0.78rem;color:var(--text-muted);margin-top:2px;"></div>
-      </div>
-    </div>
-    <div class="popup-amount-wrap">
-      <span class="popup-currency">₪</span>
-      <input type="number" id="popup-amount" min="0" inputmode="numeric" placeholder="0">
-    </div>
-    <div class="popup-quick-btns" id="popup-quick-btns"></div>
-    <div class="popup-actions">
-      <button class="btn btn-ghost btn-sm" id="popup-cancel">ביטול</button>
-      <button class="btn btn-danger btn-sm" id="popup-clear">✗ לא שולם</button>
-      <button class="btn btn-primary btn-sm" id="popup-save">✓ שמור</button>
-    </div>
-  </div>
-</div>
-<div id="popup-overlay" style="display:none;position:fixed;inset:0;z-index:199;background:rgba(0,0,0,0.3);backdrop-filter:blur(2px);"></div>
+<!-- inline partial editing — no popup needed -->
 
 <div class="toast" id="toast"></div>
 
@@ -680,13 +662,18 @@ function renderMatrix(year){
     tbody.appendChild(tr);
   });
 
-  // left click = toggle full/unpaid
+  // left click = toggle full/unpaid; ✏ button = inline editor
   tbody.querySelectorAll('.pay-cell[data-apt]').forEach(cell=>{
     let pressTimer=null;
 
     cell.addEventListener('click', e=>{
-      // If click was on the ✏️ partial button — open popup, don't toggle
-      if(e.target.closest('.partial-btn')) return;
+      if (activeInlineCell) return; // editor open — ignore
+      // ✏ button opens inline editor
+      if(e.target.closest('.partial-btn')){
+        e.stopPropagation();
+        openInlineEditor(cell);
+        return;
+      }
       const aptId=parseInt(cell.dataset.apt),key=cell.dataset.key;
       const cur=payments[aptId][key]||0;
       payments[aptId][key]=cur>=serverMonthlyFee?0:serverMonthlyFee;
@@ -695,21 +682,12 @@ function renderMatrix(year){
       refreshMarkAllBtn(cell.closest('tr'),aptId,parseInt(cell.dataset.year),monthsToShow);
     });
 
-    // long press mobile (500ms)
+    // long press mobile → inline editor
     cell.addEventListener('touchstart',()=>{
-      pressTimer=setTimeout(()=>openPartialPopup(cell),500);
+      pressTimer=setTimeout(()=>openInlineEditor(cell),500);
     },{passive:true});
     cell.addEventListener('touchend', ()=>clearTimeout(pressTimer));
-    cell.addEventListener('touchmove', ()=>clearTimeout(pressTimer));
-
-    // partial button click
-    const partialBtn=cell.querySelector('.partial-btn');
-    if(partialBtn){
-      partialBtn.addEventListener('click',e=>{
-        e.stopPropagation();
-        openPartialPopup(cell);
-      });
-    }
+    cell.addEventListener('touchmove',()=>clearTimeout(pressTimer));
   });
 
   // mark-all buttons
@@ -826,101 +804,105 @@ document.addEventListener('click',e=>{
   else{el.textContent='•••';btn.textContent='הצג';}
 });
 
-// ── RIGHT-CLICK on payment matrix — registered ONCE, works after every re-render ──
+// right-click → inline editor (registered ONCE, survives re-renders)
 document.getElementById('payments-matrix').addEventListener('contextmenu', e=>{
   e.preventDefault();
   const cell = e.target.closest('.pay-cell[data-apt]');
-  if(cell) openPartialPopup(cell);
+  if(cell) openInlineEditor(cell);
 });
 
-// PARTIAL POPUP
-let popupCell=null;
-function openPartialPopup(cell){
-  popupCell=cell;
-  const aptId=parseInt(cell.dataset.apt),key=cell.dataset.key;
-  const [yr,mn]=key.split('-');
-  const apt=serverApartments.find(a=>a.id===aptId);
-  document.getElementById('popup-title').textContent=`דירה ${aptId}${apt&&apt.ownerName?' — '+apt.ownerName:''}`;
-  document.getElementById('popup-subtitle').textContent=`${MONTHS_HE[parseInt(mn)-1]} ${yr} | ועד: ₪${serverMonthlyFee}`;
+// ══ INLINE PARTIAL EDITOR ════════════════════════════════════════════════
+// Opens a mini editor INSIDE the cell itself — no popup, no overlay.
+// Right-click (desktop) or long-press (mobile) activates it.
 
-  const cur=payments[aptId][key]||0;
-  const inp=document.getElementById('popup-amount');
-  inp.value=cur>0?cur:'';
-  inp.placeholder=serverMonthlyFee;
+let activeInlineCell = null;
 
-  // Quick-amount buttons: 25%, 50%, 75%, מלא
-  const qb=document.getElementById('popup-quick-btns');
-  qb.innerHTML='';
-  [
-    {label:'25%', val:Math.round(serverMonthlyFee*0.25)},
-    {label:'50%', val:Math.round(serverMonthlyFee*0.5)},
-    {label:'75%', val:Math.round(serverMonthlyFee*0.75)},
-    {label:'מלא ✓', val:serverMonthlyFee}
-  ].forEach(({label,val})=>{
-    const b=document.createElement('button');
-    b.className='popup-quick-btn';
-    b.textContent=`${label} (₪${val})`;
-    b.onclick=()=>{ inp.value=val; inp.focus(); };
-    qb.appendChild(b);
+function openInlineEditor(cell) {
+  // Close any existing editor first
+  closeInlineEditor();
+
+  activeInlineCell = cell;
+  const aptId = parseInt(cell.dataset.apt);
+  const key   = cell.dataset.key;
+  const [yr, mn] = key.split('-');
+  const cur   = payments[aptId][key] || 0;
+
+  // Save original cell content to restore on cancel
+  cell.dataset.origHtml = cell.innerHTML;
+
+  // Build inline editor HTML
+  cell.innerHTML = `
+    <div class="inline-editor" onclick="event.stopPropagation()">
+      <div class="ie-label">₪ / ${serverMonthlyFee}</div>
+      <input class="ie-input" type="number" min="0" max="${serverMonthlyFee}"
+             value="${cur > 0 ? cur : ''}" placeholder="${serverMonthlyFee}"
+             inputmode="numeric" id="ie-inp-${aptId}-${mn}">
+      <div class="ie-btns">
+        <button class="ie-btn ie-cancel" title="ביטול">✕</button>
+        <button class="ie-btn ie-full"   title="שולם מלא">✓</button>
+        <button class="ie-btn ie-save"   title="שמור">💾</button>
+      </div>
+    </div>`;
+
+  cell.classList.add('editing');
+
+  const inp = cell.querySelector('.ie-input');
+  inp.focus();
+  inp.select();
+
+  // Save on Enter, cancel on Escape
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter')  { e.preventDefault(); saveInline(cell); }
+    if (e.key === 'Escape') { e.preventDefault(); closeInlineEditor(); }
   });
 
-  // Position popup near cell, keep in viewport
-  const popup=document.getElementById('partial-popup');
-  popup.classList.add('show');
-  document.getElementById('popup-overlay').style.display='block';
-
-  // Position after show so we can measure popup size
-  requestAnimationFrame(()=>{
-    const rect=cell.getBoundingClientRect();
-    const pw=popup.offsetWidth||300;
-    const ph=popup.offsetHeight||260;
-    let top=rect.bottom+window.scrollY+8;
-    let left=rect.left+window.scrollX;
-    // keep inside right edge
-    if(left+pw>window.innerWidth-8) left=window.innerWidth-pw-8;
-    if(left<8) left=8;
-    // flip above if not enough space below
-    if(rect.bottom+ph+8>window.innerHeight) top=rect.top+window.scrollY-ph-8;
-    popup.style.top=top+'px';
-    popup.style.left=left+'px';
-    popup.style.right='auto';
-    setTimeout(()=>inp.focus(),50);
-  });
+  cell.querySelector('.ie-save').addEventListener('click',   e => { e.stopPropagation(); saveInline(cell); });
+  cell.querySelector('.ie-full').addEventListener('click',   e => { e.stopPropagation(); saveInlineFull(cell); });
+  cell.querySelector('.ie-cancel').addEventListener('click', e => { e.stopPropagation(); closeInlineEditor(); });
 }
 
-function closePopup(){
-  document.getElementById('partial-popup').classList.remove('show');
-  document.getElementById('popup-overlay').style.display='none';
-  popupCell=null;
+function saveInline(cell) {
+  const inp   = cell.querySelector('.ie-input');
+  const aptId = parseInt(cell.dataset.apt);
+  const key   = cell.dataset.key;
+  const val   = Math.min(Math.max(parseInt(inp.value) || 0, 0), serverMonthlyFee);
+  payments[aptId][key] = val;
+  closeInlineEditor();
+  refreshCell(cell, aptId, key);
+  refreshMarkAllBtn(cell.closest('tr'), aptId, parseInt(cell.dataset.year),
+    parseInt(cell.dataset.year) < currentYear ? 12 : currentMonth);
+  updateDebtCell(aptId);
+  updateSummary();
 }
 
-document.getElementById('popup-save').addEventListener('click',()=>{
-  if(!popupCell) return;
-  const aptId=parseInt(popupCell.dataset.apt),key=popupCell.dataset.key;
-  const raw=document.getElementById('popup-amount').value;
-  const val=Math.min(Math.max(parseInt(raw)||0, 0), serverMonthlyFee);
-  payments[aptId][key]=val;
-  refreshCell(popupCell,aptId,key);
-  refreshMarkAllBtn(popupCell.closest('tr'),aptId,parseInt(popupCell.dataset.year),
-    parseInt(popupCell.dataset.year)<currentYear?12:currentMonth);
-  updateDebtCell(aptId);updateSummary();closePopup();
-});
+function saveInlineFull(cell) {
+  const aptId = parseInt(cell.dataset.apt);
+  const key   = cell.dataset.key;
+  payments[aptId][key] = serverMonthlyFee;
+  closeInlineEditor();
+  refreshCell(cell, aptId, key);
+  refreshMarkAllBtn(cell.closest('tr'), aptId, parseInt(cell.dataset.year),
+    parseInt(cell.dataset.year) < currentYear ? 12 : currentMonth);
+  updateDebtCell(aptId);
+  updateSummary();
+}
 
-document.getElementById('popup-clear').addEventListener('click',()=>{
-  if(!popupCell) return;
-  const aptId=parseInt(popupCell.dataset.apt),key=popupCell.dataset.key;
-  payments[aptId][key]=0;
-  refreshCell(popupCell,aptId,key);
-  refreshMarkAllBtn(popupCell.closest('tr'),aptId,parseInt(popupCell.dataset.year),
-    parseInt(popupCell.dataset.year)<currentYear?12:currentMonth);
-  updateDebtCell(aptId);updateSummary();closePopup();
-});
+function closeInlineEditor() {
+  if (!activeInlineCell) return;
+  const cell  = activeInlineCell;
+  const aptId = parseInt(cell.dataset.apt);
+  const key   = cell.dataset.key;
+  activeInlineCell = null;
+  cell.classList.remove('editing');
+  // Restore correct cell display
+  refreshCell(cell, aptId, key);
+}
 
-document.getElementById('popup-cancel').addEventListener('click',closePopup);
-document.getElementById('popup-overlay').addEventListener('click',closePopup);
-document.getElementById('popup-amount').addEventListener('keydown',e=>{
-  if(e.key==='Enter') document.getElementById('popup-save').click();
-  if(e.key==='Escape') closePopup();
+// Close editor if user clicks outside
+document.addEventListener('click', e => {
+  if (activeInlineCell && !activeInlineCell.contains(e.target)) {
+    closeInlineEditor();
+  }
 });
 
 // SPECIAL CHARGES
