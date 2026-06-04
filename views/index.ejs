@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="/css/style.css?v=<%=cssVersion%>">
   <script>
     // Apply theme BEFORE render to prevent flash — no auto-login here
-    if(localStorage.getItem('vaad_theme')==='light') document.documentElement.classList.add('pre-light');
+    if(localStorage.getItem('vaad_theme')!=='dark') document.documentElement.classList.add('pre-light');
     // IMPORTANT: clear any stale auto-login on first visit to prevent showing personal data
     // We validate on load below — if server rejects, we clear.
   </script>
@@ -27,6 +27,11 @@
     width:100%;max-width:400px;
     box-shadow:var(--shadow-lg);
     text-align:center;
+  }
+  @media(max-width:480px){
+    .unified-login-card{ padding:28px 18px 24px; border-radius:12px; }
+    .page-hero{ padding:16px 14px 12px; }
+    .unified-login-wrap{ padding:4px 0 16px; }
   }
   .ulogin-icon{font-size:3rem;margin-bottom:14px;display:block;}
   .ulogin-title{
@@ -92,13 +97,17 @@
 
   /* ── ANNOUNCEMENTS ── */
   .ann-bar{background:var(--bg2);border-bottom:1px solid var(--border);}
-  .ann-inner{max-width:1100px;margin:0 auto;padding:0 20px;display:flex;flex-wrap:wrap;}
-  .ann-item{display:flex;align-items:flex-start;gap:10px;padding:12px 16px;border-left:1px solid var(--border);flex:1;min-width:240px;}
+  .ann-inner{max-width:1100px;margin:0 auto;padding:0;display:flex;flex-wrap:wrap;}
+  .ann-item{display:flex;align-items:flex-start;gap:10px;padding:12px 16px;border-left:1px solid var(--border);flex:1;min-width:0;width:100%;}
   .ann-item:last-child{border-left:none;}
-  .ann-icon{font-size:1.3rem;flex-shrink:0;margin-top:2px;}
+  .ann-icon{font-size:1.2rem;flex-shrink:0;margin-top:2px;}
+  .ann-text{min-width:0;flex:1;}
   .ann-text strong{font-size:0.85rem;font-weight:700;color:var(--text);display:block;margin-bottom:2px;}
-  .ann-text span{font-size:0.78rem;color:var(--text-muted);line-height:1.5;}
-  @media(max-width:600px){.ann-item{border-left:none;border-bottom:1px solid var(--border);}}
+  .ann-text span{font-size:0.78rem;color:var(--text-muted);line-height:1.5;display:block;word-break:break-word;}
+  @media(max-width:600px){
+    .ann-item{border-left:none;border-bottom:1px solid var(--border);padding:10px 14px;}
+    .ann-inner{padding:0;}
+  }
 
   /* ── FINANCIAL REPORT ── */
   .fin-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}
@@ -132,9 +141,9 @@
     </div>
     <nav class="header-nav" style="display:flex;align-items:center;gap:10px;">
       <button class="theme-toggle" id="theme-toggle-btn">
-        <span id="theme-icon">🌙</span>
+        <span id="theme-icon">☀️</span>
         <div class="toggle-track"><div class="toggle-thumb"></div></div>
-        <span id="theme-label">כהה</span>
+        <span id="theme-label">בהיר</span>
       </button>
       <button id="header-logout-btn" style="display:none;" class="btn btn-outline btn-sm" style="font-size:0.8rem;">
         ↩ התנתק
@@ -456,7 +465,7 @@
 const bankDetails = <%- JSON.stringify(bankDetails) %>;
 
 // ── THEME ──────────────────────────────────────────────────────────────────
-(function(){ applyTheme(localStorage.getItem('vaad_theme')||'dark'); })();
+(function(){ applyTheme(localStorage.getItem('vaad_theme')||'light'); })();
 function applyTheme(mode){
   document.body.classList.toggle('light', mode==='light');
   const i=document.getElementById('theme-icon'), l=document.getElementById('theme-label');

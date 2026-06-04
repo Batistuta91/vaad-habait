@@ -117,6 +117,8 @@ body.light .apt-tile.owed { background: rgba(220,38,38,0.06); }
 }
 body.light .theme-toggle .toggle-track { background: var(--gold-dim); border-color: var(--gold); }
 body.light .theme-toggle .toggle-thumb { background: var(--gold); transform: translateX(-14px); }
+html.pre-light .theme-toggle .toggle-track { background: rgba(245,200,66,0.15); border-color: #f5c842; }
+html.pre-light .theme-toggle .toggle-thumb { background: #f5c842; transform: translateX(-14px); }
 
 /* ─── RESET ──────────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }

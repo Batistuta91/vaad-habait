@@ -6,7 +6,7 @@
   <title>ממשק מנהל — <%= buildingName %></title>
   <link rel="stylesheet" href="/css/style.css?v=<%=cssVersion%>">
   <script>
-    if(localStorage.getItem('vaad_theme')==='light') document.documentElement.classList.add('pre-light');
+    if(localStorage.getItem('vaad_theme')!=='dark') document.documentElement.classList.add('pre-light');
   </script>
   <style>
   html.pre-light body{background:#f5f6fa!important;}
@@ -184,9 +184,9 @@
     </div>
     <nav class="header-nav" style="display:flex;align-items:center;gap:10px;">
       <button class="theme-toggle" id="theme-toggle-btn">
-        <span id="theme-icon">🌙</span>
+        <span id="theme-icon">☀️</span>
         <div class="toggle-track"><div class="toggle-thumb"></div></div>
-        <span id="theme-label">כהה</span>
+        <span id="theme-label">בהיר</span>
       </button>
       <a href="/" id="admin-logout-link" onclick="localStorage.removeItem('vaad_admin_session');">↩ יציאה</a>
     </nav>
@@ -555,7 +555,7 @@ serverApartments.forEach(a=>{
 });
 
 // THEME
-(function(){applyTheme(localStorage.getItem('vaad_theme')||'dark');})();
+(function(){applyTheme(localStorage.getItem('vaad_theme')||'light');})();
 function applyTheme(mode){
   document.body.classList.toggle('light',mode==='light');
   const i=document.getElementById('theme-icon'),l=document.getElementById('theme-label');
