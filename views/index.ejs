@@ -6,13 +6,19 @@
   <title><%= buildingName %></title>
   <link rel="stylesheet" href="/css/style.css?v=<%=cssVersion%>">
   <script>
-    // Apply theme BEFORE render to prevent flash — no auto-login here
-    if(localStorage.getItem('vaad_theme')!=='dark') document.documentElement.classList.add('pre-light');
-    // IMPORTANT: clear any stale auto-login on first visit to prevent showing personal data
-    // We validate on load below — if server rejects, we clear.
+    var _t = localStorage.getItem('vaad_theme') || 'light';
+    if (_t === 'light') {
+      document.documentElement.classList.add('pre-light');
+      document.addEventListener('DOMContentLoaded', function(){
+        document.body.classList.add('light');
+      });
+    }
   </script>
   <style>
-  html.pre-light body{background:#f5f6fa!important;}
+  html.pre-light body{ background:#f5f6fa!important; color:#1a1e2e!important; }
+  html.pre-light .site-header{ background:#ffffff!important; }
+  html.pre-light .unified-login-card{ background:#ffffff!important; }
+  html.pre-light .ann-bar{ background:#eef0f6!important; }
 
   /* ── UNIFIED LOGIN CARD ── */
   .unified-login-wrap{
@@ -96,18 +102,14 @@
   }
 
   /* ── ANNOUNCEMENTS ── */
-  .ann-bar{background:var(--bg2);border-bottom:1px solid var(--border);}
-  .ann-inner{max-width:1100px;margin:0 auto;padding:0;display:flex;flex-wrap:wrap;}
-  .ann-item{display:flex;align-items:flex-start;gap:10px;padding:12px 16px;border-left:1px solid var(--border);flex:1;min-width:0;width:100%;}
-  .ann-item:last-child{border-left:none;}
-  .ann-icon{font-size:1.2rem;flex-shrink:0;margin-top:2px;}
-  .ann-text{min-width:0;flex:1;}
-  .ann-text strong{font-size:0.85rem;font-weight:700;color:var(--text);display:block;margin-bottom:2px;}
-  .ann-text span{font-size:0.78rem;color:var(--text-muted);line-height:1.5;display:block;word-break:break-word;}
-  @media(max-width:600px){
-    .ann-item{border-left:none;border-bottom:1px solid var(--border);padding:10px 14px;}
-    .ann-inner{padding:0;}
-  }
+  .ann-bar{background:var(--bg2);border-bottom:1px solid var(--border);overflow:hidden;}
+  .ann-inner{max-width:1100px;margin:0 auto;padding:0;display:flex;flex-direction:column;}
+  .ann-item{display:flex;align-items:flex-start;gap:10px;padding:11px 16px;border-bottom:1px solid var(--border);width:100%;box-sizing:border-box;}
+  .ann-item:last-child{border-bottom:none;}
+  .ann-icon{font-size:1.1rem;flex-shrink:0;margin-top:2px;}
+  .ann-text{min-width:0;flex:1;overflow:hidden;}
+  .ann-text strong{font-size:0.83rem;font-weight:700;color:var(--text);display:block;margin-bottom:2px;}
+  .ann-text span{font-size:0.76rem;color:var(--text-muted);line-height:1.5;display:block;word-wrap:break-word;overflow-wrap:break-word;}
 
   /* ── FINANCIAL REPORT ── */
   .fin-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}
@@ -465,14 +467,17 @@
 const bankDetails = <%- JSON.stringify(bankDetails) %>;
 
 // ── THEME ──────────────────────────────────────────────────────────────────
-(function(){ applyTheme(localStorage.getItem('vaad_theme')||'light'); })();
 function applyTheme(mode){
   document.body.classList.toggle('light', mode==='light');
+  document.documentElement.classList.toggle('pre-light', mode==='light');
   const i=document.getElementById('theme-icon'), l=document.getElementById('theme-label');
   if(i) i.textContent=mode==='light'?'☀️':'🌙';
   if(l) l.textContent=mode==='light'?'בהיר':'כהה';
   localStorage.setItem('vaad_theme', mode);
 }
+// Apply immediately
+applyTheme(localStorage.getItem('vaad_theme')||'light');
+
 document.getElementById('theme-toggle-btn').addEventListener('click',()=>{
   applyTheme(document.body.classList.contains('light')?'dark':'light');
 });
