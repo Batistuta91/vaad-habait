@@ -6,6 +6,7 @@
   <title>ממשק מנהל — <%= buildingName %></title>
   <link rel="stylesheet" href="/css/style.css?v=<%=cssVersion%>">
   <script>
+<<<<<<< HEAD
     var _t = localStorage.getItem('vaad_theme') || 'light';
     if (_t === 'light') {
       document.documentElement.classList.add('pre-light');
@@ -18,6 +19,14 @@
   <style>
   html.pre-light body{ background:#f5f6fa!important; color:#1a1e2e!important; }
   html.pre-light .site-header{ background:#ffffff!important; }
+=======
+    if(localStorage.getItem('vaad_theme')==='light') document.documentElement.classList.add('pre-light');
+    if(sessionStorage.getItem('vaad_admin_pass'))    document.documentElement.classList.add('skip-overlay');
+  </script>
+  <style>
+  html.pre-light body{background:#f5f6fa!important;}
+  html.skip-overlay #admin-login-overlay{display:none!important;}
+>>>>>>> parent of 4e4fb97 (3)
   .tabs{display:flex;gap:6px;margin-bottom:24px;flex-wrap:wrap;}
   .tab-btn{padding:10px 18px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg2);color:var(--text-muted);font-family:'Heebo',sans-serif;font-size:0.88rem;font-weight:600;cursor:pointer;transition:var(--transition);}
   .tab-btn.active{background:var(--gold);color:#111;border-color:var(--gold);}
@@ -82,9 +91,9 @@
   .apt-grid-v2 input,.apt-grid-v2 select{background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'Heebo',sans-serif;font-size:0.84rem;padding:7px 10px;width:100%;direction:rtl;transition:var(--transition);}
   .apt-grid-v2 input:focus,.apt-grid-v2 select:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 2px var(--gold-dim);}
   .apt-grid-v2 .tenant-field-wrap.active input{border-color:rgba(245,158,11,0.5)!important;background:rgba(245,158,11,0.06)!important;}
-  @media(max-width:1200px){.apt-grid-v2{grid-template-columns:36px 100px 1fr 1fr 120px 1fr;}.apt-grid-v2 .col-pw,.apt-grid-v2 .col-status{display:none;}.apt-grid-v2.hdr .col-pw,.apt-grid-v2.hdr .col-status{display:none;}}
-  @media(max-width:900px){.apt-grid-v2{grid-template-columns:36px 100px 1fr 1fr;}.apt-grid-v2 .col-phone,.apt-grid-v2 .col-pw,.apt-grid-v2 .col-status{display:none;}.apt-grid-v2.hdr .col-phone,.apt-grid-v2.hdr .col-pw,.apt-grid-v2.hdr .col-status{display:none;}}
-  @media(max-width:680px){.apt-grid-v2{grid-template-columns:32px 90px 1fr 1fr;}.apt-grid-v2 .col-pass,.apt-grid-v2 .col-note,.apt-grid-v2 .col-phone{display:none;}.apt-grid-v2.hdr .col-pass,.apt-grid-v2.hdr .col-note,.apt-grid-v2.hdr .col-phone{display:none;}}
+  @media(max-width:1100px){.apt-grid-v2{grid-template-columns:36px 100px 1fr 1fr 130px 1fr;}.apt-grid-v2 .col-pw,.apt-grid-v2 .col-status{display:none;}.apt-grid-v2.hdr .col-pw,.apt-grid-v2.hdr .col-status{display:none;}}
+  @media(max-width:800px){.apt-grid-v2{grid-template-columns:36px 100px 1fr 1fr;}.apt-grid-v2 .col-pw,.apt-grid-v2 .col-status{display:none;}.apt-grid-v2.hdr .col-pw,.apt-grid-v2.hdr .col-status{display:none;}}
+  @media(max-width:680px){.apt-grid-v2{grid-template-columns:32px 90px 1fr 1fr;}.apt-grid-v2 .col-pass,.apt-grid-v2 .col-note{display:none;}.apt-grid-v2.hdr .col-pass,.apt-grid-v2.hdr .col-note{display:none;}}
   @media(max-width:480px){.apt-grid-v2{grid-template-columns:28px 80px 1fr;}.apt-grid-v2 .col-tenant{display:none;}.apt-grid-v2.hdr .col-tenant{display:none;}}
 
   /* SPECIAL CHARGES */
@@ -196,15 +205,30 @@
         <div class="toggle-track"><div class="toggle-thumb"></div></div>
         <span id="theme-label">בהיר</span>
       </button>
-      <a href="/" id="admin-logout-link" onclick="localStorage.removeItem('vaad_admin_session');">↩ יציאה</a>
+      <a href="/">← דיירים</a>
     </nav>
   </div>
 </header>
 
-<!-- no login overlay — auth done on main page -->
+<!-- LOGIN -->
+<div id="admin-login-overlay" class="admin-login-overlay">
+  <div class="admin-login-box">
+    <span class="lock-icon">🔐</span>
+    <h2>כניסת ועד בית</h2>
+    <p>אזור מוגן</p>
+    <p style="font-size:0.8rem;color:var(--gold);margin-bottom:16px;">סיסמת ברירת מחדל: <strong>vaad2024</strong></p>
+    <div class="form-group" style="text-align:right;">
+      <label>סיסמת מנהל</label>
+      <input type="password" id="admin-pass-input" placeholder="הזן סיסמה"
+        style="width:100%;background:var(--bg);border:1px solid var(--border-strong);border-radius:8px;color:var(--text);font-family:Heebo,sans-serif;font-size:1rem;padding:12px 14px;direction:rtl;margin-top:6px;">
+    </div>
+    <div id="admin-login-error" style="color:var(--red);font-size:0.85rem;margin:10px 0;display:none;padding:8px 12px;background:var(--red-dim);border-radius:6px;"></div>
+    <button class="btn btn-primary btn-full mt-12" id="admin-login-btn">כניסה למערכת</button>
+  </div>
+</div>
 
 <!-- PANEL -->
-<div id="admin-panel" class="visible">
+<div id="admin-panel">
   <div class="page-hero">
     <h1>ניהול <span>ועד הבית</span></h1>
     <p>שליטה מלאה על כל הנתונים</p>
@@ -595,42 +619,42 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
 });
 
 // LOGIN
-// ── ADMIN AUTH ────────────────────────────────────────────────────────────
-// Password comes from sessionStorage (set by main login page)
-// or from localStorage for persistent admin sessions
-function initAdmin(pass){
-  adminPassword = pass;
-  renderMatrix(activeYear);
-  updateSummary();
-  calcFinSummary();
+async function doAdminLogin(){
+  const pass=document.getElementById('admin-pass-input').value.trim();
+  if(!pass) return;
+  const btn=document.getElementById('admin-login-btn');
+  btn.disabled=true;btn.textContent='...';
+  try{
+    const r=await fetch('/api/admin/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pass})});
+    const d=await r.json();
+    if(d.success){
+      adminPassword=pass;
+      document.getElementById('admin-login-overlay').style.display='none';
+      document.getElementById('admin-panel').classList.add('visible');
+      renderMatrix(activeYear);
+      updateSummary();
+      calcFinSummary();
+      showToast('ברוך הבא!');
+    } else {
+      const el=document.getElementById('admin-login-error');
+      el.style.display='block';el.textContent='סיסמה שגויה';
+    }
+  }catch(e){
+    document.getElementById('admin-login-error').style.display='block';
+    document.getElementById('admin-login-error').textContent='שגיאת רשת';
+  }finally{btn.disabled=false;btn.textContent='כניסה למערכת';}
 }
+document.getElementById('admin-login-btn').addEventListener('click',doAdminLogin);
+document.getElementById('admin-pass-input').addEventListener('keydown',e=>{if(e.key==='Enter')doAdminLogin();});
 
+// Auto-login if coming from main login page
 (function(){
-  // 1. From main page redirect (sessionStorage)
-  const fromMain = sessionStorage.getItem('vaad_admin_pass');
-  if(fromMain){
+  const stored = sessionStorage.getItem('vaad_admin_pass');
+  if(stored){
     sessionStorage.removeItem('vaad_admin_pass');
-    localStorage.setItem('vaad_admin_session', fromMain);
-    initAdmin(fromMain);
-    return;
+    document.getElementById('admin-pass-input').value = stored;
+    doAdminLogin();
   }
-  // 2. Remembered session (localStorage)
-  const remembered = localStorage.getItem('vaad_admin_session');
-  if(remembered){
-    // Verify it's still valid
-    fetch('/api/admin/verify',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({password:remembered})})
-    .then(r=>r.json()).then(d=>{
-      if(d.success){ initAdmin(remembered); }
-      else {
-        localStorage.removeItem('vaad_admin_session');
-        window.location.href = '/'; // back to main login
-      }
-    }).catch(()=>{ window.location.href = '/'; });
-    return;
-  }
-  // 3. No session — redirect to main login
-  window.location.href = '/';
 })();
 
 // CALC DEBT

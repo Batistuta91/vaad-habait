@@ -750,8 +750,8 @@ document.getElementById('print-phonebook-btn').addEventListener('click',()=>{
     const phone = phoneEl ? phoneEl.textContent.trim() : '';
     win.document.write(`<tr><td>${num}</td><td>${name}</td><td><a href="tel:${phone}">${phone||'—'}</a></td></tr>`);
   });
-  win.document.write(`</tbody></table><p style="margin-top:20px;font-size:0.75rem;color:#999;">
-    הודפס: ${new Date().toLocaleDateString('he-IL')}</p><script src="/js/a11y.js"></script>
+    win.document.write(`</tbody></table><p style="margin-top:20px;font-size:0.75rem;color:#999;">
+    הודפס: ${new Date().toLocaleDateString('he-IL')}</p>
 </body></html>`);
   win.document.close();
   win.focus();
