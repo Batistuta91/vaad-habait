@@ -414,11 +414,11 @@
     <div class="tab-pane" id="tab-tickets">
       <p class="text-muted" style="margin-bottom:16px;font-size:0.88rem;">קריאות שירות שהגישו הדיירים. שנה סטטוס והוסף הערה.</p>
       <div class="card" style="padding:0;">
-        <% const tickets = tickets || []; %>
-        <% if(tickets.length === 0){ %>
+        <% var tktList = tickets || []; %>
+        <% if(tktList.length === 0){ %>
         <div style="text-align:center;padding:40px;color:var(--text-muted);">אין תקלות פתוחות 🎉</div>
         <% } else { %>
-        <% tickets.forEach(tkt=>{ %>
+        <% tktList.forEach(tkt=>{ %>
         <div class="ticket-row" data-tkt-id="<%=tkt.id%>">
           <div style="flex:1;min-width:180px;">
             <div style="font-weight:700;margin-bottom:4px;"><%=tkt.title%></div>
@@ -503,12 +503,12 @@
     <div class="tab-pane" id="tab-bulletin">
       <p class="text-muted" style="margin-bottom:16px;font-size:0.88rem;">מודעות שפרסמו הדיירים. ניתן להסתיר או למחוק.</p>
       <div class="card" style="padding:0;">
-        <% const bulletin = bulletin||[]; %>
-        <% if(bulletin.length===0){ %>
+        <% var bltList = bulletin||[]; %>
+        <% if(bltList.length===0){ %>
         <div style="text-align:center;padding:40px;color:var(--text-muted);">אין מודעות עדיין.</div>
         <% } else { %>
         <% const catLabels={sale:'🛒 מכירה',service:'🔧 בעל מקצוע',wanted:'🔍 מחפש',other:'📋 אחר'}; %>
-        <% bulletin.forEach(b=>{ %>
+        <% bltList.forEach(b=>{ %>
         <div class="bulletin-admin-row" data-blt-id="<%=b.id%>">
           <div style="flex:1;min-width:160px;">
             <span class="blt-cat-badge <%=b.category%>"><%=catLabels[b.category]||'📋 אחר'%></span>
