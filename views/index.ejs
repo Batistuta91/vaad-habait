@@ -128,6 +128,52 @@
   /* ── PUBLIC HIDDEN ── */
   .public-hidden-msg{text-align:center;padding:32px;color:var(--text-muted);font-size:0.92rem;
     background:var(--bg2);border-radius:var(--radius);border:1px dashed var(--border-strong);}
+
+  /* ── WHATSAPP BUTTON ── */
+  .wa-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:50px;
+    background:#25D366;color:#fff;font-size:0.82rem;font-weight:700;text-decoration:none;border:none;
+    cursor:pointer;transition:opacity 0.15s;flex-shrink:0;}
+  .wa-btn:hover{opacity:0.85;}
+
+  /* ── TICKETS ── */
+  .ticket-form{background:var(--bg2);border:1px dashed var(--border-strong);border-radius:var(--radius);padding:18px;margin-bottom:14px;}
+  .ticket-form input,.ticket-form textarea{width:100%;background:var(--bg);border:1px solid var(--border-strong);
+    border-radius:6px;color:var(--text);font-family:'Heebo',sans-serif;font-size:0.9rem;
+    padding:10px 12px;direction:rtl;margin-top:6px;margin-bottom:10px;}
+  .ticket-form textarea{min-height:70px;resize:vertical;}
+  .ticket-form input:focus,.ticket-form textarea:focus{outline:none;border-color:var(--gold);}
+  .ticket-item{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);
+    padding:14px;margin-bottom:8px;}
+  .ticket-status{display:inline-block;padding:2px 10px;border-radius:50px;font-size:0.75rem;font-weight:700;}
+  .ticket-status.open{background:rgba(239,68,68,0.12);color:var(--red);}
+  .ticket-status.in-progress{background:rgba(245,200,66,0.12);color:var(--gold);}
+  .ticket-status.closed{background:var(--green-dim);color:var(--green);}
+
+  /* ── POLLS ── */
+  .poll-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:14px;}
+  .poll-question{font-weight:700;font-size:1rem;margin-bottom:14px;}
+  .poll-option{display:flex;align-items:center;gap:10px;margin-bottom:8px;cursor:pointer;padding:8px 12px;
+    border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg3);transition:var(--transition);}
+  .poll-option:hover{border-color:var(--gold);background:var(--gold-dim);}
+  .poll-option.voted{border-color:var(--green);background:var(--green-dim);}
+  .poll-bar{height:6px;background:var(--bg3);border-radius:50px;flex:1;overflow:hidden;}
+  .poll-bar-fill{height:100%;background:var(--green);border-radius:50px;transition:width 0.4s;}
+  .poll-count{font-size:0.75rem;color:var(--text-muted);white-space:nowrap;}
+
+  /* ── BULLETIN ── */
+  .bulletin-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);
+    padding:14px;margin-bottom:8px;display:flex;flex-direction:column;gap:6px;}
+  .bulletin-cat{display:inline-block;padding:2px 10px;border-radius:50px;font-size:0.72rem;font-weight:700;margin-bottom:4px;}
+  .bulletin-cat.sale{background:rgba(99,102,241,0.12);color:var(--blue);}
+  .bulletin-cat.service{background:var(--green-dim);color:var(--green);}
+  .bulletin-cat.wanted{background:rgba(245,200,66,0.12);color:var(--gold);}
+  .bulletin-cat.other{background:var(--bg3);color:var(--text-muted);}
+  .bulletin-form{background:var(--bg2);border:1px dashed var(--border-strong);border-radius:var(--radius);padding:18px;margin-bottom:14px;}
+  .bulletin-form input,.bulletin-form textarea,.bulletin-form select{width:100%;background:var(--bg);border:1px solid var(--border-strong);
+    border-radius:6px;color:var(--text);font-family:'Heebo',sans-serif;font-size:0.9rem;
+    padding:10px 12px;direction:rtl;margin-top:6px;margin-bottom:10px;}
+  .bulletin-form textarea{min-height:60px;resize:vertical;}
+  .bulletin-form input:focus,.bulletin-form textarea:focus,.bulletin-form select:focus{outline:none;border-color:var(--gold);}
   </style>
 </head>
 <body>
@@ -240,8 +286,10 @@
         <div class="personal-info">
           <div class="apt-label" id="pa-owner"></div>
           <div id="pa-debt-badge" class="debt-badge zero mt-8">✓ אין חוב</div>
+          <div id="pa-credit" style="display:none;font-size:0.8rem;color:var(--green);margin-top:5px;font-weight:600;"></div>
           <div id="pa-breakdown" style="display:none;font-size:0.82rem;color:var(--text-muted);margin-top:6px;"></div>
           <div class="apt-note mt-12" id="pa-note" style="display:none;"></div>
+          <a id="pa-wa-self" href="#" target="_blank" rel="noopener" class="wa-btn mt-8" style="display:none;font-size:0.78rem;">💬 שלח תזכורת לעצמי בוואטסאפ</a>
         </div>
         <button class="btn btn-ghost btn-sm" id="logout-btn">↩ יציאה</button>
       </div>
@@ -460,6 +508,95 @@
     </div>
   </section>
 
+  <!-- ══ POLLS ═════════════════════════════════════════════════════════════ -->
+  <% if(activePolls && activePolls.length > 0){ %>
+  <div class="divider"></div>
+  <section class="section">
+    <h2 class="section-title">🗳️ הצבעות פעילות</h2>
+    <% activePolls.forEach(poll=>{ %>
+    <div class="poll-card" id="poll-<%=poll.id%>" data-poll-id="<%=poll.id%>">
+      <div class="poll-question"><%=poll.question%></div>
+      <div class="poll-options">
+        <% const total = Object.keys(poll.votes||{}).length; %>
+        <% poll.options.forEach((opt,idx)=>{ %>
+        <% const count = Object.values(poll.votes||{}).filter(v=>v===idx).length; %>
+        <% const pct = total>0 ? Math.round(count/total*100) : 0; %>
+        <div class="poll-option" data-idx="<%=idx%>" onclick="votePoll('<%=poll.id%>',<%=idx%>)">
+          <span style="flex:1;font-size:0.9rem;"><%=opt%></span>
+          <div class="poll-bar"><div class="poll-bar-fill" style="width:<%=pct%>%"></div></div>
+          <span class="poll-count"><%=count%> (<%=pct%>%)</span>
+        </div>
+        <% }) %>
+      </div>
+      <div style="font-size:0.76rem;color:var(--text-dim);margin-top:8px;">סה"כ <%=total%> מצביעים</div>
+    </div>
+    <% }) %>
+  </section>
+  <% } %>
+
+  <!-- ══ BULLETIN ═══════════════════════════════════════════════════════════ -->
+  <div class="divider"></div>
+  <section class="section" id="bulletin-section">
+    <h2 class="section-title">📌 לוח מודעות הבניין</h2>
+
+    <!-- submit form — shown only when logged in -->
+    <div id="bulletin-form-wrap" style="display:none;">
+      <div class="bulletin-form">
+        <div style="font-size:0.85rem;font-weight:700;color:var(--text-muted);margin-bottom:6px;">+ פרסם מודעה חדשה</div>
+        <select id="blt-cat" style="margin-bottom:0;">
+          <option value="sale">🛒 מכירה</option>
+          <option value="service">🔧 בעל מקצוע מומלץ</option>
+          <option value="wanted">🔍 מחפש</option>
+          <option value="other">📋 אחר</option>
+        </select>
+        <input type="text" id="blt-title" placeholder="כותרת המודעה" maxlength="100">
+        <textarea id="blt-body" placeholder="פרטים נוספים (אופציונלי)" maxlength="400"></textarea>
+        <button class="btn btn-primary" onclick="submitBulletin()">פרסם מודעה</button>
+      </div>
+    </div>
+
+    <!-- list -->
+    <div id="bulletin-list">
+      <% if(bulletinItems && bulletinItems.length > 0){ %>
+        <% bulletinItems.forEach(b=>{ %>
+        <div class="bulletin-card">
+          <div>
+            <span class="bulletin-cat <%=b.category%>"><%=b.category==='sale'?'🛒 מכירה':b.category==='service'?'🔧 בעל מקצוע':b.category==='wanted'?'🔍 מחפש':'📋 אחר'%></span>
+            <span style="font-size:0.75rem;color:var(--text-dim);margin-right:8px;">דירה <%=b.aptId%> — <%=b.ownerName||''%></span>
+          </div>
+          <div style="font-weight:700;"><%=b.title%></div>
+          <%if(b.body){%><div style="font-size:0.85rem;color:var(--text-muted);"><%=b.body%></div><%}%>
+          <div style="font-size:0.72rem;color:var(--text-dim);"><%=new Date(b.createdAt).toLocaleDateString('he-IL')%></div>
+        </div>
+        <% }) %>
+      <% } else { %>
+      <div style="text-align:center;padding:32px;color:var(--text-muted);font-size:0.9rem;background:var(--bg2);border-radius:var(--radius);border:1px dashed var(--border-strong);">
+        אין מודעות כרגע — היה הראשון לפרסם!
+      </div>
+      <% } %>
+    </div>
+  </section>
+
+  <!-- ══ TICKETS ════════════════════════════════════════════════════════════ -->
+  <div class="divider"></div>
+  <section class="section" id="tickets-section">
+    <h2 class="section-title">🔧 דיווח על תקלה</h2>
+
+    <!-- form — shown only when logged in -->
+    <div id="ticket-form-wrap" style="display:none;">
+      <div class="ticket-form">
+        <div style="font-size:0.85rem;font-weight:700;color:var(--text-muted);margin-bottom:6px;">+ פתח קריאת שירות חדשה</div>
+        <input type="text" id="tkt-title" placeholder="כותרת התקלה (למשל: נורה שרופה בכניסה)" maxlength="120">
+        <textarea id="tkt-desc" placeholder="תיאור מפורט (אופציונלי)" maxlength="500"></textarea>
+        <button class="btn btn-primary" onclick="submitTicket()">שלח דיווח</button>
+      </div>
+    </div>
+
+    <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:12px;">
+      להגשת תקלה יש להתחבר תחילה עם מספר הדירה.
+    </div>
+  </section>
+
 </main>
 <div class="toast" id="toast"></div>
 
@@ -513,6 +650,24 @@ function renderPersonal(apt){
     badge.className='debt-badge has-debt mt-8';
     badge.innerHTML=`⚠ חוב כולל: ₪${apt.debt.toLocaleString()}`;
   }
+  // credit balance
+  const creditEl = document.getElementById('pa-credit');
+  if(creditEl){
+    if(apt.credit && apt.credit > 0){
+      creditEl.style.display='block';
+      creditEl.textContent=`✦ יתרת זכות: ₪${apt.credit.toLocaleString()} (תועבר אוטומטית לחודש הבא)`;
+    } else creditEl.style.display='none';
+  }
+  // WhatsApp reminder link (for self)
+  const waEl = document.getElementById('pa-wa-self');
+  if(waEl && apt.debt > 0){
+    const rawPhone = (apt.phone||'').replace(/\D/g,'').replace(/^0/,'');
+    if(rawPhone){
+      const waText = encodeURIComponent(`שלום, תזכורת לתשלום ועד בית — חוב: ₪${apt.debt.toLocaleString()}`);
+      waEl.href = `https://wa.me/972${rawPhone}?text=${waText}`;
+      waEl.style.display='inline-flex';
+    } else waEl.style.display='none';
+  } else if(waEl) waEl.style.display='none';
 
   const bk=document.getElementById('pa-breakdown');
   if(apt.debt>0){
@@ -694,8 +849,14 @@ async function loadPhonebook(aptId, pass){
       const name = apt.ownerType==='tenant' && apt.tenantName
         ? `${apt.ownerName} <span style="color:var(--text-muted);font-size:0.8rem;">(שוכר: ${apt.tenantName})</span>`
         : apt.ownerName || `דירה ${apt.id}`;
+      const rawPhone = apt.phone ? apt.phone.replace(/\D/g,'') : '';
+      const waName  = apt.ownerType==='tenant' && apt.tenantName ? apt.tenantName : (apt.ownerName||'');
+      const waText  = encodeURIComponent(`שלום ${waName}, אני מועד הבית.`);
       const phone = apt.phone
-        ? `<a href="tel:${apt.phone}" style="color:var(--blue);font-weight:700;text-decoration:none;">${apt.phone}</a>`
+        ? `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+             <a href="tel:${apt.phone}" style="color:var(--blue);font-weight:700;text-decoration:none;">${apt.phone}</a>
+             <a href="https://wa.me/972${rawPhone.replace(/^0/,'')}?text=${waText}" target="_blank" rel="noopener" class="wa-btn">💬 וואטסאפ</a>
+           </div>`
         : '<span style="color:var(--text-dim);font-size:0.82rem;">אין טלפון</span>';
       list.insertAdjacentHTML('beforeend',`
         <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;
@@ -761,6 +922,114 @@ document.getElementById('copy-bank-btn').addEventListener('click',()=>{
   const txt=`פרטי בנק ועד הבית\nבנק: ${bankDetails.bank}\nסניף: ${bankDetails.branch}\nחשבון: ${bankDetails.account}\nשם: ${bankDetails.beneficiary}`;
   navigator.clipboard.writeText(txt).then(()=>showToast('פרטי הבנק הועתקו ✓')).catch(()=>showToast('העתק ידנית','error'));
 });
+
+// ── SHOW TENANT FORMS AFTER LOGIN ─────────────────────────────────────────
+function showTenantForms(show){
+  const el1 = document.getElementById('bulletin-form-wrap');
+  const el2 = document.getElementById('ticket-form-wrap');
+  if(el1) el1.style.display = show ? 'block' : 'none';
+  if(el2) el2.style.display = show ? 'block' : 'none';
+}
+
+// Hook into existing login/logout
+const _origRenderPersonal = renderPersonal;
+window.renderPersonal = function(apt){
+  _origRenderPersonal(apt);
+  showTenantForms(true);
+  window._loggedApt = apt;
+};
+
+const _origDoLogout = doLogout;
+document.getElementById('logout-btn').removeEventListener('click', doLogout);
+document.getElementById('header-logout-btn').removeEventListener('click', doLogout);
+
+function doLogoutNew(){
+  _origDoLogout();
+  showTenantForms(false);
+  window._loggedApt = null;
+}
+document.getElementById('logout-btn').addEventListener('click', doLogoutNew);
+document.getElementById('header-logout-btn').addEventListener('click', doLogoutNew);
+
+// ── POLLS ─────────────────────────────────────────────────────────────────
+async function votePoll(pollId, optionIndex){
+  const apt  = window._loggedApt;
+  if(!apt){ showToast('יש להתחבר כדי להצביע','error'); return; }
+  const aptId   = localStorage.getItem('vaad_v2_apt');
+  const password= localStorage.getItem('vaad_v2_pass');
+  try{
+    const r = await fetch('/api/poll/vote',{method:'POST',headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({apartmentId:aptId, password, pollId, optionIndex})});
+    const d = await r.json();
+    if(d.success){
+      // Update bars
+      const card = document.getElementById(`poll-${pollId}`);
+      if(!card) return;
+      const opts = card.querySelectorAll('.poll-option');
+      opts.forEach((opt,i)=>{
+        const pct = d.total>0 ? Math.round((d.counts[i]||0)/d.total*100) : 0;
+        opt.querySelector('.poll-bar-fill').style.width = pct+'%';
+        opt.querySelector('.poll-count').textContent = `${d.counts[i]||0} (${pct}%)`;
+        opt.classList.toggle('voted', i===optionIndex);
+      });
+      card.querySelector('div:last-child').textContent = `סה"כ ${d.total} מצביעים`;
+      showToast('הצבעתך נרשמה!');
+    } else showToast(d.message||'שגיאה','error');
+  }catch(e){ showToast('שגיאת רשת','error'); }
+}
+
+// ── TICKETS ───────────────────────────────────────────────────────────────
+async function submitTicket(){
+  const apt  = window._loggedApt;
+  if(!apt){ showToast('יש להתחבר תחילה','error'); return; }
+  const title = document.getElementById('tkt-title').value.trim();
+  const desc  = document.getElementById('tkt-desc').value.trim();
+  if(!title){ showToast('הזן כותרת לתקלה','error'); return; }
+  try{
+    const r = await fetch('/api/ticket/submit',{method:'POST',headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({apartmentId: localStorage.getItem('vaad_v2_apt'),
+        password: localStorage.getItem('vaad_v2_pass'), title, description: desc})});
+    const d = await r.json();
+    if(d.success){
+      document.getElementById('tkt-title').value='';
+      document.getElementById('tkt-desc').value='';
+      showToast('קריאת השירות נשלחה לוועד הבית ✓');
+    } else showToast(d.message||'שגיאה','error');
+  }catch(e){ showToast('שגיאת רשת','error'); }
+}
+
+// ── BULLETIN ──────────────────────────────────────────────────────────────
+async function submitBulletin(){
+  const apt = window._loggedApt;
+  if(!apt){ showToast('יש להתחבר תחילה','error'); return; }
+  const title    = document.getElementById('blt-title').value.trim();
+  const body     = document.getElementById('blt-body').value.trim();
+  const category = document.getElementById('blt-cat').value;
+  if(!title){ showToast('הזן כותרת למודעה','error'); return; }
+  try{
+    const r = await fetch('/api/bulletin/submit',{method:'POST',headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({apartmentId: localStorage.getItem('vaad_v2_apt'),
+        password: localStorage.getItem('vaad_v2_pass'), title, body, category})});
+    const d = await r.json();
+    if(d.success){
+      document.getElementById('blt-title').value='';
+      document.getElementById('blt-body').value='';
+      // prepend to list
+      const catLabels={sale:'🛒 מכירה',service:'🔧 בעל מקצוע',wanted:'🔍 מחפש',other:'📋 אחר'};
+      const list = document.getElementById('bulletin-list');
+      const div  = document.createElement('div');
+      div.className='bulletin-card';
+      div.innerHTML=`
+        <div><span class="bulletin-cat ${category}">${catLabels[category]||'📋 אחר'}</span>
+          <span style="font-size:0.75rem;color:var(--text-dim);margin-right:8px;">דירה ${apt.id}</span></div>
+        <div style="font-weight:700;">${title}</div>
+        ${body?`<div style="font-size:0.85rem;color:var(--text-muted);">${body}</div>`:''}
+        <div style="font-size:0.72rem;color:var(--text-dim);">${new Date().toLocaleDateString('he-IL')}</div>`;
+      list.insertBefore(div, list.firstChild);
+      showToast('המודעה פורסמה! ✓');
+    } else showToast(d.message||'שגיאה','error');
+  }catch(e){ showToast('שגיאת רשת','error'); }
+}
 </script>
 <script src="/js/a11y.js"></script>
 </body>

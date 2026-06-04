@@ -6,27 +6,12 @@
   <title>ממשק מנהל — <%= buildingName %></title>
   <link rel="stylesheet" href="/css/style.css?v=<%=cssVersion%>">
   <script>
-<<<<<<< HEAD
-    var _t = localStorage.getItem('vaad_theme') || 'light';
-    if (_t === 'light') {
-      document.documentElement.classList.add('pre-light');
-      // Also add to body as soon as it exists (before DOMContentLoaded)
-      document.addEventListener('DOMContentLoaded', function(){
-        document.body.classList.add('light');
-      });
-    }
-  </script>
-  <style>
-  html.pre-light body{ background:#f5f6fa!important; color:#1a1e2e!important; }
-  html.pre-light .site-header{ background:#ffffff!important; }
-=======
     if(localStorage.getItem('vaad_theme')==='light') document.documentElement.classList.add('pre-light');
     if(sessionStorage.getItem('vaad_admin_pass'))    document.documentElement.classList.add('skip-overlay');
   </script>
   <style>
   html.pre-light body{background:#f5f6fa!important;}
   html.skip-overlay #admin-login-overlay{display:none!important;}
->>>>>>> parent of 4e4fb97 (3)
   .tabs{display:flex;gap:6px;margin-bottom:24px;flex-wrap:wrap;}
   .tab-btn{padding:10px 18px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg2);color:var(--text-muted);font-family:'Heebo',sans-serif;font-size:0.88rem;font-weight:600;cursor:pointer;transition:var(--transition);}
   .tab-btn.active{background:var(--gold);color:#111;border-color:var(--gold);}
@@ -189,6 +174,37 @@
   .tx-admin-table tr:hover td{background:rgba(255,255,255,0.02);}
   .tx-income{color:var(--green);font-weight:700;}
   .tx-expense{color:var(--red);font-weight:700;}
+
+  /* TICKET */
+  .ticket-row{display:flex;align-items:flex-start;gap:12px;padding:14px;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+  .ticket-row:last-child{border-bottom:none;}
+  .ticket-status-sel{background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'Heebo',sans-serif;font-size:0.82rem;padding:5px 10px;direction:rtl;}
+  .ticket-note-inp{background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'Heebo',sans-serif;font-size:0.82rem;padding:5px 10px;direction:rtl;flex:1;min-width:100px;}
+  .tkt-badge{display:inline-block;padding:2px 10px;border-radius:50px;font-size:0.72rem;font-weight:700;}
+  .tkt-badge.open{background:rgba(239,68,68,0.12);color:var(--red);}
+  .tkt-badge.in-progress{background:rgba(245,200,66,0.12);color:var(--gold);}
+  .tkt-badge.closed{background:var(--green-dim);color:var(--green);}
+
+  /* POLLS ADMIN */
+  .poll-admin-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;}
+  .poll-admin-result{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:0.85rem;}
+  .poll-result-bar{flex:1;height:8px;background:var(--bg3);border-radius:50px;overflow:hidden;}
+  .poll-result-fill{height:100%;background:var(--blue);border-radius:50px;transition:width 0.4s;}
+
+  /* BULLETIN ADMIN */
+  .bulletin-admin-row{display:flex;align-items:flex-start;gap:12px;padding:12px;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+  .bulletin-admin-row:last-child{border-bottom:none;}
+  .blt-cat-badge{display:inline-block;padding:2px 8px;border-radius:50px;font-size:0.72rem;font-weight:700;}
+  .blt-cat-badge.sale{background:rgba(99,102,241,0.12);color:var(--blue);}
+  .blt-cat-badge.service{background:var(--green-dim);color:var(--green);}
+  .blt-cat-badge.wanted{background:rgba(245,200,66,0.12);color:var(--gold);}
+  .blt-cat-badge.other{background:var(--bg3);color:var(--text-muted);}
+
+  /* WA button */
+  .wa-btn{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:50px;
+    background:#25D366;color:#fff;font-size:0.78rem;font-weight:700;text-decoration:none;
+    border:none;cursor:pointer;transition:opacity 0.15s;white-space:nowrap;}
+  .wa-btn:hover{opacity:0.85;}
   </style>
 </head>
 <body>
@@ -246,6 +262,9 @@
       <button class="tab-btn" data-tab="apartments">🏠 דירות</button>
       <button class="tab-btn" data-tab="special">⚡ גביות מיוחדות</button>
       <button class="tab-btn" data-tab="finance">💰 הכנסות/הוצאות</button>
+      <button class="tab-btn" data-tab="tickets">🔧 תקלות</button>
+      <button class="tab-btn" data-tab="polls">🗳️ סקרים</button>
+      <button class="tab-btn" data-tab="bulletin">📌 לוח מודעות</button>
       <button class="tab-btn" data-tab="announcements">📢 הודעות</button>
       <button class="tab-btn" data-tab="settings">⚙️ הגדרות</button>
     </div>
@@ -334,8 +353,11 @@
             </div>
 
             <!-- phone -->
-            <div class="col-phone">
+            <div class="col-phone" style="display:flex;flex-direction:column;gap:4px;">
               <input type="tel" class="phone-input" value="<%=apt.phone||''%>" placeholder="05X-XXXXXXX" dir="ltr" style="text-align:right;">
+              <% if(apt.phone){ const raw=apt.phone.replace(/\D/g,'').replace(/^0/,''); const waName=apt.ownerType==='tenant'&&apt.tenantName?apt.tenantName:(apt.ownerName||`דירה ${apt.id}`); %>
+              <a href="https://wa.me/972<%=raw%>?text=<%=encodeURIComponent('שלום '+waName+', אני מועד הבית.')%>" target="_blank" rel="noopener" class="wa-btn" style="font-size:0.72rem;padding:3px 10px;">💬 וואטסאפ</a>
+              <% } %>
             </div>
 
             <!-- new password -->
@@ -385,6 +407,124 @@
           </div>
         </div>
         <% }) %>
+      </div>
+    </div>
+
+    <!-- ── TICKETS ────────────────────────────────────────────────── -->
+    <div class="tab-pane" id="tab-tickets">
+      <p class="text-muted" style="margin-bottom:16px;font-size:0.88rem;">קריאות שירות שהגישו הדיירים. שנה סטטוס והוסף הערה.</p>
+      <div class="card" style="padding:0;">
+        <% const tickets = tickets || []; %>
+        <% if(tickets.length === 0){ %>
+        <div style="text-align:center;padding:40px;color:var(--text-muted);">אין תקלות פתוחות 🎉</div>
+        <% } else { %>
+        <% tickets.forEach(tkt=>{ %>
+        <div class="ticket-row" data-tkt-id="<%=tkt.id%>">
+          <div style="flex:1;min-width:180px;">
+            <div style="font-weight:700;margin-bottom:4px;"><%=tkt.title%></div>
+            <%if(tkt.description){%><div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:4px;"><%=tkt.description%></div><%}%>
+            <div style="font-size:0.76rem;color:var(--text-dim);">
+              דירה <%=tkt.aptId%> — <%=tkt.ownerName||''%> |
+              <%=new Date(tkt.createdAt).toLocaleDateString('he-IL')%>
+            </div>
+            <%if(tkt.adminNote){%><div style="font-size:0.8rem;color:var(--blue);margin-top:4px;">📝 <%=tkt.adminNote%></div><%}%>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;flex-shrink:0;">
+            <span class="tkt-badge <%=tkt.status%>"><%=tkt.status==='open'?'פתוח':tkt.status==='in-progress'?'בטיפול':'סגור'%></span>
+            <select class="ticket-status-sel" onchange="updateTicket('<%=tkt.id%>',this.value,null)">
+              <option value="open"        <%=tkt.status==='open'       ?'selected':''%>>פתוח</option>
+              <option value="in-progress" <%=tkt.status==='in-progress'?'selected':''%>>בטיפול</option>
+              <option value="closed"      <%=tkt.status==='closed'     ?'selected':''%>>סגור</option>
+            </select>
+            <div style="display:flex;gap:6px;">
+              <input class="ticket-note-inp" placeholder="הערת מנהל..." value="<%=tkt.adminNote||''%>"
+                onblur="updateTicket('<%=tkt.id%>',null,this.value)" style="width:160px;">
+              <button class="btn btn-danger btn-sm" onclick="deleteTicket('<%=tkt.id%>',this)">🗑</button>
+            </div>
+          </div>
+        </div>
+        <% }) %>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- ── POLLS ──────────────────────────────────────────────────── -->
+    <div class="tab-pane" id="tab-polls">
+      <p class="text-muted" style="margin-bottom:16px;font-size:0.88rem;">צור סקרים שיוצגו לכל הדיירים בדף הראשי.</p>
+
+      <!-- Add poll form -->
+      <div class="add-row" style="flex-direction:column;gap:10px;">
+        <div style="font-size:0.85rem;font-weight:700;color:var(--text-muted);">+ סקר חדש</div>
+        <div class="fg" style="width:100%;"><label>שאלה</label>
+          <input type="text" id="poll-q" placeholder="האם להחליף חברת ניקיון?" style="width:100%;background:var(--bg);border:1px solid var(--border-strong);border-radius:6px;color:var(--text);font-family:'Heebo',sans-serif;font-size:0.9rem;padding:9px 12px;direction:rtl;">
+        </div>
+        <div id="poll-options-wrap" style="display:flex;flex-direction:column;gap:6px;width:100%;">
+          <input type="text" class="poll-opt-inp" placeholder="אפשרות 1" style="background:var(--bg);border:1px solid var(--border-strong);border-radius:6px;color:var(--text);font-family:'Heebo',sans-serif;font-size:0.88rem;padding:8px 12px;direction:rtl;">
+          <input type="text" class="poll-opt-inp" placeholder="אפשרות 2" style="background:var(--bg);border:1px solid var(--border-strong);border-radius:6px;color:var(--text);font-family:'Heebo',sans-serif;font-size:0.88rem;padding:8px 12px;direction:rtl;">
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-outline btn-sm" id="add-poll-opt-btn">+ אפשרות</button>
+          <button class="btn btn-primary" id="add-poll-btn">צור סקר</button>
+        </div>
+      </div>
+
+      <!-- Poll list -->
+      <div id="polls-list" style="margin-top:16px;">
+        <% (polls||[]).forEach(poll=>{ const total=Object.keys(poll.votes||{}).length; %>
+        <div class="poll-admin-card" data-poll-id="<%=poll.id%>">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+            <div>
+              <div style="font-weight:700;"><%=poll.question%></div>
+              <div style="font-size:0.76rem;color:var(--text-dim);"><%=new Date(poll.createdAt).toLocaleDateString('he-IL')%> | <%=total%> מצביעים</div>
+            </div>
+            <div style="display:flex;gap:6px;flex-shrink:0;">
+              <button class="btn btn-outline btn-sm toggle-poll-btn" data-poll-id="<%=poll.id%>">
+                <%=poll.active?'⏸ השהה':'▶ הפעל'%>
+              </button>
+              <button class="btn btn-danger btn-sm delete-poll-btn" data-poll-id="<%=poll.id%>">🗑</button>
+            </div>
+          </div>
+          <% poll.options.forEach((opt,i)=>{ const cnt=Object.values(poll.votes||{}).filter(v=>v===i).length; const pct=total>0?Math.round(cnt/total*100):0; %>
+          <div class="poll-admin-result">
+            <span style="min-width:100px;font-size:0.83rem;"><%=opt%></span>
+            <div class="poll-result-bar"><div class="poll-result-fill" style="width:<%=pct%>%"></div></div>
+            <span style="font-size:0.78rem;color:var(--text-muted);white-space:nowrap;"><%=cnt%> (<%=pct%>%)</span>
+          </div>
+          <% }) %>
+          <div style="margin-top:6px;display:flex;align-items:center;gap:8px;">
+            <span class="badge <%=poll.active?'badge-green':'badge-red'%>"><%=poll.active?'פעיל':'מושהה'%></span>
+          </div>
+        </div>
+        <% }) %>
+      </div>
+    </div>
+
+    <!-- ── BULLETIN ────────────────────────────────────────────────── -->
+    <div class="tab-pane" id="tab-bulletin">
+      <p class="text-muted" style="margin-bottom:16px;font-size:0.88rem;">מודעות שפרסמו הדיירים. ניתן להסתיר או למחוק.</p>
+      <div class="card" style="padding:0;">
+        <% const bulletin = bulletin||[]; %>
+        <% if(bulletin.length===0){ %>
+        <div style="text-align:center;padding:40px;color:var(--text-muted);">אין מודעות עדיין.</div>
+        <% } else { %>
+        <% const catLabels={sale:'🛒 מכירה',service:'🔧 בעל מקצוע',wanted:'🔍 מחפש',other:'📋 אחר'}; %>
+        <% bulletin.forEach(b=>{ %>
+        <div class="bulletin-admin-row" data-blt-id="<%=b.id%>">
+          <div style="flex:1;min-width:160px;">
+            <span class="blt-cat-badge <%=b.category%>"><%=catLabels[b.category]||'📋 אחר'%></span>
+            <span style="font-size:0.75rem;color:var(--text-dim);margin-right:8px;">דירה <%=b.aptId%></span>
+            <div style="font-weight:700;margin-top:4px;"><%=b.title%></div>
+            <%if(b.body){%><div style="font-size:0.82rem;color:var(--text-muted);"><%=b.body%></div><%}%>
+            <div style="font-size:0.72rem;color:var(--text-dim);margin-top:4px;"><%=new Date(b.createdAt).toLocaleDateString('he-IL')%></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;flex-shrink:0;">
+            <span class="badge <%=b.active?'badge-green':'badge-red'%>"><%=b.active?'פעיל':'מוסתר'%></span>
+            <button class="btn btn-outline btn-sm toggle-blt-btn" data-blt-id="<%=b.id%>"><%=b.active?'הסתר':'הצג'%></button>
+            <button class="btn btn-danger btn-sm delete-blt-btn" data-blt-id="<%=b.id%>">🗑</button>
+          </div>
+        </div>
+        <% }) %>
+        <% } %>
       </div>
     </div>
 
@@ -471,14 +611,20 @@
       <div class="card" style="margin-top:16px;">
         <h3 class="section-title" style="margin-bottom:6px;">גיבוי ושחזור נתונים</h3>
         <p class="text-muted" style="font-size:0.82rem;margin-bottom:18px;">
-          מומלץ לגבות לפני כל עדכון קוד. השחזור יחליף את <strong>כל</strong> הנתונים הקיימים.
+          גיבוי אוטומטי פועל כל יום ראשון. שומר 5 גיבויים אחרונים. מומלץ לגבות לפני כל עדכון קוד.
         </p>
-        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
           <button class="btn btn-outline" id="backup-btn">⬇️ הורד גיבוי (JSON)</button>
+          <button class="btn btn-outline" id="backup-now-btn">💾 גבה עכשיו</button>
           <label class="btn btn-outline" style="cursor:pointer;">
             ⬆️ שחזר מגיבוי
             <input type="file" id="restore-file" accept=".json" style="display:none;">
           </label>
+        </div>
+        <!-- Auto-backup list -->
+        <div id="auto-backups-wrap" style="margin-top:8px;">
+          <div style="font-size:0.8rem;font-weight:700;color:var(--text-muted);margin-bottom:8px;">גיבויים אוטומטיים:</div>
+          <div id="auto-backups-list" style="font-size:0.82rem;color:var(--text-dim);">טוען...</div>
         </div>
         <div id="restore-status" style="margin-top:12px;font-size:0.85rem;display:none;"></div>
       </div>
@@ -704,7 +850,9 @@ function renderMatrix(year){
     const debt=calcAptDebt(apt.id);
     html+=`<td style="padding:6px;white-space:nowrap;">
       <span id="mtx-debt-${apt.id}" style="font-weight:700;font-size:0.8rem;color:${debt===0?'var(--green)':'var(--red)'};">
-        ${debt===0?'✓':'₪'+debt.toLocaleString()}</span></td>`;
+        ${debt===0?'✓':'₪'+debt.toLocaleString()}</span>
+      ${debt>0&&apt.phone?`<button onclick="sendWaReminder(${apt.id})" title="שלח תזכורת וואטסאפ" style="background:none;border:none;cursor:pointer;font-size:0.9rem;margin-right:3px;">💬</button>`:''}
+      </td>`;
     // mark-all button
     const allPaid=checkAllPaidForYear(apt.id,year,monthsToShow);
     html+=`<td style="padding:4px 6px;text-align:center;">
@@ -1182,12 +1330,151 @@ async function saveAll(){
   finally{btn.disabled=false;btn.textContent='💾 שמור הכל';}
 }
 
+// ══ TICKETS ════════════════════════════════════════════════════════════════
+async function updateTicket(ticketId, status, adminNote){
+  if(!adminPassword) return;
+  const body = { adminPassword, ticketId };
+  if(status !== null) body.status = status;
+  if(adminNote !== null) body.adminNote = adminNote;
+  try{
+    const r = await fetch('/api/admin/ticket/update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const d = await r.json();
+    if(d.success){
+      // update badge
+      const row  = document.querySelector(`.ticket-row[data-tkt-id="${ticketId}"]`);
+      if(row){
+        const badge = row.querySelector('.tkt-badge');
+        if(badge && status){
+          badge.className='tkt-badge '+status;
+          badge.textContent=status==='open'?'פתוח':status==='in-progress'?'בטיפול':'סגור';
+        }
+      }
+      showToast('עודכן!');
+    }
+  }catch(e){ showToast('שגיאה','error'); }
+}
+
+async function deleteTicket(ticketId, btn){
+  if(!confirm('למחוק קריאה זו?')) return;
+  try{
+    const r = await fetch(`/api/admin/ticket/${ticketId}`,{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({adminPassword})});
+    const d = await r.json();
+    if(d.success){ btn.closest('.ticket-row').remove(); showToast('נמחק'); }
+  }catch(e){ showToast('שגיאה','error'); }
+}
+
+// ══ POLLS ══════════════════════════════════════════════════════════════════
+document.getElementById('add-poll-opt-btn').addEventListener('click',()=>{
+  const wrap = document.getElementById('poll-options-wrap');
+  const count = wrap.querySelectorAll('.poll-opt-inp').length;
+  if(count >= 6){ showToast('מקסימום 6 אפשרויות','error'); return; }
+  const inp = document.createElement('input');
+  inp.type='text'; inp.className='poll-opt-inp';
+  inp.placeholder=`אפשרות ${count+1}`;
+  inp.style.cssText='background:var(--bg);border:1px solid var(--border-strong);border-radius:6px;color:var(--text);font-family:Heebo,sans-serif;font-size:0.88rem;padding:8px 12px;direction:rtl;';
+  wrap.appendChild(inp);
+});
+
+document.getElementById('add-poll-btn').addEventListener('click',async()=>{
+  const q = document.getElementById('poll-q').value.trim();
+  if(!q){ showToast('הזן שאלה','error'); return; }
+  const opts = [...document.querySelectorAll('.poll-opt-inp')].map(i=>i.value.trim()).filter(Boolean);
+  if(opts.length < 2){ showToast('נדרשות לפחות 2 אפשרויות','error'); return; }
+  try{
+    const r = await fetch('/api/admin/poll/add',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({adminPassword, question:q, options:opts})});
+    const d = await r.json();
+    if(d.success){
+      document.getElementById('poll-q').value='';
+      document.querySelectorAll('.poll-opt-inp').forEach((i,idx)=>{ i.value=''; if(idx>=2) i.remove(); });
+      // prepend card
+      const poll=d.poll;
+      const div=document.createElement('div');div.className='poll-admin-card';div.dataset.pollId=poll.id;
+      let optHtml=poll.options.map(o=>`<div class="poll-admin-result"><span style="min-width:100px;font-size:0.83rem;">${o}</span><div class="poll-result-bar"><div class="poll-result-fill" style="width:0%"></div></div><span style="font-size:0.78rem;color:var(--text-muted);">0 (0%)</span></div>`).join('');
+      div.innerHTML=`<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+        <div><div style="font-weight:700;">${poll.question}</div><div style="font-size:0.76rem;color:var(--text-dim);">${new Date().toLocaleDateString('he-IL')} | 0 מצביעים</div></div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-outline btn-sm toggle-poll-btn" data-poll-id="${poll.id}">⏸ השהה</button>
+          <button class="btn btn-danger btn-sm delete-poll-btn" data-poll-id="${poll.id}">🗑</button>
+        </div></div>${optHtml}
+        <div style="margin-top:6px;"><span class="badge badge-green">פעיל</span></div>`;
+      document.getElementById('polls-list').insertBefore(div, document.getElementById('polls-list').firstChild);
+      showToast('סקר נוצר!');
+    } else showToast(d.message||'שגיאה','error');
+  }catch(e){ showToast('שגיאת רשת','error'); }
+});
+
+document.getElementById('polls-list').addEventListener('click',async e=>{
+  const tog = e.target.closest('.toggle-poll-btn');
+  if(tog){
+    const pollId=tog.dataset.pollId;
+    try{
+      const r=await fetch('/api/admin/poll/toggle',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({adminPassword,pollId})});
+      const d=await r.json();
+      if(d.success){ tog.textContent=d.active?'⏸ השהה':'▶ הפעל'; showToast(d.active?'הסקר פעיל':'הסקר מושהה'); }
+    }catch(e){ showToast('שגיאה','error'); }
+    return;
+  }
+  const del = e.target.closest('.delete-poll-btn');
+  if(del){
+    if(!confirm('למחוק סקר?')) return;
+    const pollId=del.dataset.pollId;
+    try{
+      const r=await fetch(`/api/admin/poll/${pollId}`,{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({adminPassword})});
+      const d=await r.json();
+      if(d.success){ del.closest('.poll-admin-card').remove(); showToast('נמחק'); }
+    }catch(e){ showToast('שגיאה','error'); }
+  }
+});
+
+// ══ BULLETIN ══════════════════════════════════════════════════════════════
+document.querySelector('#tab-bulletin .card')?.addEventListener('click',async e=>{
+  const tog = e.target.closest('.toggle-blt-btn');
+  if(tog){
+    const itemId=tog.dataset.bltId;
+    try{
+      const r=await fetch('/api/admin/bulletin/toggle',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({adminPassword,itemId})});
+      const d=await r.json();
+      if(d.success){
+        const row=tog.closest('.bulletin-admin-row');
+        const badge=row.querySelector('.badge');
+        if(badge){ badge.className='badge '+(d.active?'badge-green':'badge-red'); badge.textContent=d.active?'פעיל':'מוסתר'; }
+        tog.textContent=d.active?'הסתר':'הצג';
+        showToast(d.active?'מוצג':'מוסתר');
+      }
+    }catch(e){ showToast('שגיאה','error'); }
+    return;
+  }
+  const del = e.target.closest('.delete-blt-btn');
+  if(del){
+    if(!confirm('למחוק מודעה?')) return;
+    const itemId=del.dataset.bltId;
+    try{
+      const r=await fetch(`/api/admin/bulletin/${itemId}`,{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({adminPassword})});
+      const d=await r.json();
+      if(d.success){ del.closest('.bulletin-admin-row').remove(); showToast('נמחק'); }
+    }catch(e){ showToast('שגיאה','error'); }
+  }
+});
+
+// ══ WA REMINDER FROM MATRIX ═══════════════════════════════════════════════
+// Right-click on debt cell → send WhatsApp reminder
+function sendWaReminder(aptId){
+  const apt = serverApartments.find(a=>a.id===aptId);
+  if(!apt || !apt.phone) return;
+  const debt = calcAptDebt(aptId);
+  if(!debt) return;
+  const raw  = apt.phone.replace(/\D/g,'').replace(/^0/,'');
+  const name = apt.ownerType==='tenant'&&apt.tenantName ? apt.tenantName : (apt.ownerName||`דירה ${aptId}`);
+  const text = encodeURIComponent(`שלום ${name},\nתזכורת לתשלום ועד בית.\nחוב נוכחי: ₪${debt.toLocaleString()}.\nתודה!`);
+  window.open(`https://wa.me/972${raw}?text=${text}`,'_blank','noopener');
+}
+
 document.getElementById('save-all-btn').addEventListener('click',saveAll);
 
 // ══ BACKUP ════════════════════════════════════════════════════════════════
 document.getElementById('backup-btn').addEventListener('click',()=>{
   if(!adminPassword){ showToast('התחבר תחילה','error'); return; }
-  // Direct download via link
   const a = document.createElement('a');
   a.href = `/api/admin/export/${encodeURIComponent(adminPassword)}`;
   a.download = `vaad-backup-${new Date().toISOString().slice(0,10)}.json`;
@@ -1195,6 +1482,37 @@ document.getElementById('backup-btn').addEventListener('click',()=>{
   a.click();
   document.body.removeChild(a);
   showToast('גיבוי מוריד...');
+});
+
+document.getElementById('backup-now-btn').addEventListener('click',async()=>{
+  if(!adminPassword){ showToast('התחבר תחילה','error'); return; }
+  try{
+    const r=await fetch('/api/admin/backup/now',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({adminPassword})});
+    const d=await r.json();
+    if(d.success){ showToast(d.message); loadAutoBackups(); }
+  }catch(e){ showToast('שגיאה','error'); }
+});
+
+async function loadAutoBackups(){
+  if(!adminPassword) return;
+  try{
+    const r=await fetch(`/api/admin/backups/${encodeURIComponent(adminPassword)}`);
+    const d=await r.json();
+    const el=document.getElementById('auto-backups-list');
+    if(!d.success||!d.files.length){ el.textContent='אין גיבויים אוטומטיים עדיין.'; return; }
+    el.innerHTML=d.files.map(f=>`
+      <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);">
+        <span style="flex:1;">${f.name}</span>
+        <span style="color:var(--text-dim);font-size:0.75rem;">${(f.size/1024).toFixed(1)}KB</span>
+        <a href="/api/admin/backup/download/${encodeURIComponent(adminPassword)}/${f.name}"
+           class="btn btn-outline btn-sm" style="padding:3px 10px;font-size:0.75rem;">⬇️ הורד</a>
+      </div>`).join('');
+  }catch(e){}
+}
+
+// Load backups list when settings tab is opened
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  if(btn.dataset.tab==='settings') btn.addEventListener('click', ()=>{ if(adminPassword) loadAutoBackups(); });
 });
 
 // ══ RESTORE ══════════════════════════════════════════════════════════════

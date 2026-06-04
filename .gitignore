@@ -1,8 +1,5 @@
 node_modules/
-.env
-npm-debug.log*
-
-# live-data.json = the file the app writes to. NEVER commit it.
-# It lives on the Railway Volume at /data/live-data.json
-# or locally at ./live-data.json (git-ignored so it stays on your machine)
 live-data.json
+backups/
+*.tmp
+.env
