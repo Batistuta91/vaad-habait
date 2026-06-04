@@ -883,11 +883,13 @@ function openInlineEditor(cell) {
 
 function saveInline(cell) {
   const inp   = cell.querySelector('.ie-input');
+  if (!inp) return;
   const aptId = parseInt(cell.dataset.apt);
   const key   = cell.dataset.key;
   const val   = Math.min(Math.max(parseInt(inp.value) || 0, 0), serverMonthlyFee);
   payments[aptId][key] = val;
-  closeInlineEditor();
+  activeInlineCell = null;          // clear BEFORE refreshCell so close-outside won't re-trigger
+  cell.classList.remove('editing');
   refreshCell(cell, aptId, key);
   refreshMarkAllBtn(cell.closest('tr'), aptId, parseInt(cell.dataset.year),
     parseInt(cell.dataset.year) < currentYear ? 12 : currentMonth);
@@ -899,7 +901,8 @@ function saveInlineFull(cell) {
   const aptId = parseInt(cell.dataset.apt);
   const key   = cell.dataset.key;
   payments[aptId][key] = serverMonthlyFee;
-  closeInlineEditor();
+  activeInlineCell = null;
+  cell.classList.remove('editing');
   refreshCell(cell, aptId, key);
   refreshMarkAllBtn(cell.closest('tr'), aptId, parseInt(cell.dataset.year),
     parseInt(cell.dataset.year) < currentYear ? 12 : currentMonth);
@@ -914,13 +917,13 @@ function closeInlineEditor() {
   const key   = cell.dataset.key;
   activeInlineCell = null;
   cell.classList.remove('editing');
-  // Restore correct cell display
   refreshCell(cell, aptId, key);
 }
 
-// Close editor if user clicks outside
+// Close editor only on click OUTSIDE the matrix entirely
 document.addEventListener('click', e => {
-  if (activeInlineCell && !activeInlineCell.contains(e.target)) {
+  if (!activeInlineCell) return;
+  if (!e.target.closest('#payments-matrix')) {
     closeInlineEditor();
   }
 });
@@ -1214,5 +1217,6 @@ document.addEventListener('keydown',e=>{
   }
 });
 </script>
+<script src="/js/a11y.js"></script>
 </body>
 </html>
