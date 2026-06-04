@@ -1,0 +1,5 @@
+node_modules/
+live-data.json
+backups/
+*.tmp
+.env

@@ -1,0 +1,1573 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ממשק מנהל — <%= buildingName %></title>
+  <link rel="stylesheet" href="/css/style.css?v=<%=cssVersion%>">
+  <script>
+    if(localStorage.getItem('vaad_theme')==='light') document.documentElement.classList.add('pre-light');
+    if(sessionStorage.getItem('vaad_admin_pass'))    document.documentElement.classList.add('skip-overlay');
+  </script>
+  <style>
+  html.pre-light body{background:#f5f6fa!important;}
+  html.skip-overlay #admin-login-overlay{display:none!important;}
+  .tabs{display:flex;gap:6px;margin-bottom:24px;flex-wrap:wrap;}
+  .tab-btn{padding:10px 18px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg2);color:var(--text-muted);font-family:'Heebo',sans-serif;font-size:0.88rem;font-weight:600;cursor:pointer;transition:var(--transition);}
+  .tab-btn.active{background:var(--gold);color:#111;border-color:var(--gold);}
+  .tab-pane{display:none;}.tab-pane.active{display:block;}
+
+  /* MATRIX */
+  .matrix-wrapper{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .matrix-table{border-collapse:collapse;font-size:0.79rem;min-width:680px;width:100%;}
+  .matrix-table th{background:var(--bg);color:var(--text-muted);padding:9px 4px;text-align:center;border:1px solid var(--border);white-space:nowrap;font-size:0.7rem;font-weight:700;}
+  .matrix-table td{border:1px solid var(--border);padding:0;text-align:center;vertical-align:middle;}
+  .matrix-table .apt-th{text-align:right;padding:7px 10px;white-space:nowrap;font-weight:600;min-width:90px;background:var(--bg2);}
+  .apt-th .apt-owner{font-size:0.68rem;color:var(--text-muted);display:block;}
+  .pay-cell{width:100%;height:40px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:1px;cursor:pointer;user-select:none;font-size:0.8rem;font-weight:700;transition:background 0.12s;position:relative;}
+  .pay-cell.full   {background:rgba(22,163,74,0.18);color:var(--green);}
+  .pay-cell.partial{background:rgba(245,200,66,0.2);color:var(--gold);}
+  .pay-cell.unpaid {background:rgba(239,68,68,0.08);color:var(--text-dim);}
+  .pay-cell.future {background:var(--bg3);color:var(--text-dim);cursor:default;font-size:0.68rem;}
+  .pay-cell:not(.future):hover{opacity:0.8;}
+
+  /* pencil button — visible on hover desktop, always visible mobile */
+  .partial-btn{
+    position:absolute;bottom:1px;left:2px;
+    background:none;border:none;cursor:pointer;
+    font-size:0.6rem;color:inherit;opacity:0;
+    transition:opacity 0.15s;padding:2px;line-height:1;
+    font-family:sans-serif;
+  }
+  .pay-cell:hover .partial-btn,
+  .pay-cell.partial .partial-btn{ opacity:0.7; }
+  @media(max-width:768px){
+    .partial-btn{ opacity:0.5 !important; font-size:0.65rem; }
+  }
+  .cell-amount{font-size:0.62rem;}
+
+  /* mark-all button in matrix row */
+  .mark-all-btn{
+    display:inline-flex;align-items:center;gap:3px;
+    padding:3px 8px;border-radius:4px;font-size:0.68rem;font-weight:700;
+    cursor:pointer;border:1px solid rgba(22,163,74,0.4);
+    background:rgba(22,163,74,0.1);color:var(--green);
+    white-space:nowrap;transition:var(--transition);
+  }
+  .mark-all-btn:hover{background:rgba(22,163,74,0.22);}
+
+  /* year tabs */
+  .year-tab-row{display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap;}
+  .year-tab{padding:7px 18px;border-radius:50px;border:1px solid var(--border);background:var(--bg2);color:var(--text-muted);font-size:0.85rem;font-weight:600;cursor:pointer;transition:var(--transition);}
+  .year-tab.active{background:var(--blue);color:#fff;border-color:var(--blue);}
+
+  /* LEGEND */
+  .legend{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;font-size:0.79rem;align-items:center;}
+  .leg-dot{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:50px;}
+  .leg-full   {background:rgba(22,163,74,0.14);color:var(--green);}
+  .leg-partial{background:rgba(245,200,66,0.14);color:var(--gold);}
+  .leg-unpaid {background:rgba(239,68,68,0.08);color:var(--red);}
+
+  /* APT TABLE v2 */
+  .apt-table-wrap{overflow-x:auto;}
+  .apt-grid-v2{display:grid;grid-template-columns:40px 110px 1fr 1fr 130px 130px 110px 1fr 90px;gap:8px;align-items:center;padding:9px 12px;border-bottom:1px solid var(--border);}
+  .apt-grid-v2.hdr{background:var(--bg);color:var(--text-muted);font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;border-radius:var(--radius-sm) var(--radius-sm) 0 0;}
+  .apt-grid-v2:not(.hdr):hover{background:rgba(255,255,255,0.02);}
+  .apt-grid-v2 input,.apt-grid-v2 select{background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'Heebo',sans-serif;font-size:0.84rem;padding:7px 10px;width:100%;direction:rtl;transition:var(--transition);}
+  .apt-grid-v2 input:focus,.apt-grid-v2 select:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 2px var(--gold-dim);}
+  .apt-grid-v2 .tenant-field-wrap.active input{border-color:rgba(245,158,11,0.5)!important;background:rgba(245,158,11,0.06)!important;}
+  @media(max-width:1100px){.apt-grid-v2{grid-template-columns:36px 100px 1fr 1fr 130px 1fr;}.apt-grid-v2 .col-pw,.apt-grid-v2 .col-status{display:none;}.apt-grid-v2.hdr .col-pw,.apt-grid-v2.hdr .col-status{display:none;}}
+  @media(max-width:800px){.apt-grid-v2{grid-template-columns:36px 100px 1fr 1fr;}.apt-grid-v2 .col-pw,.apt-grid-v2 .col-status{display:none;}.apt-grid-v2.hdr .col-pw,.apt-grid-v2.hdr .col-status{display:none;}}
+  @media(max-width:680px){.apt-grid-v2{grid-template-columns:32px 90px 1fr 1fr;}.apt-grid-v2 .col-pass,.apt-grid-v2 .col-note{display:none;}.apt-grid-v2.hdr .col-pass,.apt-grid-v2.hdr .col-note{display:none;}}
+  @media(max-width:480px){.apt-grid-v2{grid-template-columns:28px 80px 1fr;}.apt-grid-v2 .col-tenant{display:none;}.apt-grid-v2.hdr .col-tenant{display:none;}}
+
+  /* SPECIAL CHARGES */
+  .sc-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:14px;}
+  .sc-hdr{display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap;margin-bottom:12px;}
+  .sc-hdr input{background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'Heebo',sans-serif;font-size:0.88rem;padding:8px 11px;direction:rtl;transition:var(--transition);}
+  .sc-hdr input:focus{outline:none;border-color:var(--blue);}
+  .sc-chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px;}
+  .sc-chip{display:flex;align-items:center;gap:4px;padding:5px 11px;border-radius:50px;font-size:0.8rem;font-weight:600;cursor:pointer;user-select:none;transition:var(--transition);border:1px solid var(--border);background:var(--bg3);color:var(--text-muted);}
+  .sc-chip.paid{background:var(--green-dim);color:var(--green);border-color:rgba(22,163,74,0.35);}
+
+  /* ANNOUNCEMENTS ADMIN */
+  .ann-admin-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap;}
+  .ann-admin-card textarea{background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'Heebo',sans-serif;font-size:0.88rem;padding:9px 12px;width:100%;direction:rtl;resize:vertical;min-height:60px;line-height:1.5;}
+  .ann-admin-card textarea:focus{outline:none;border-color:var(--gold);}
+  .ann-admin-card input[type=text]{background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'Heebo',sans-serif;font-size:0.88rem;padding:9px 12px;direction:rtl;width:100%;}
+  .ann-admin-card input[type=text]:focus{outline:none;border-color:var(--gold);}
+  .ann-row{flex:1;min-width:200px;display:flex;flex-direction:column;gap:6px;}
+
+  /* SETTINGS */
+  .settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  @media(max-width:560px){.settings-grid{grid-template-columns:1fr;}}
+  .settings-grid input{width:100%;background:var(--bg2);border:1px solid var(--border-strong);border-radius:6px;color:var(--text);font-family:'Heebo',sans-serif;font-size:0.9rem;padding:10px 12px;direction:rtl;transition:var(--transition);}
+  .settings-grid input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 2px var(--gold-dim);}
+
+  /* TOGGLE SWITCH */
+  .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border);}
+  .toggle-row:last-child{border-bottom:none;}
+  .toggle-row .t-label{font-size:0.9rem;font-weight:600;color:var(--text);}
+  .toggle-row .t-desc{font-size:0.78rem;color:var(--text-muted);margin-top:2px;}
+  .ios-toggle{position:relative;width:44px;height:26px;flex-shrink:0;}
+  .ios-toggle input{opacity:0;width:0;height:0;position:absolute;}
+  .ios-toggle .slider{position:absolute;inset:0;background:var(--bg3);border-radius:50px;cursor:pointer;transition:0.2s;border:1px solid var(--border-strong);}
+  .ios-toggle .slider::before{content:'';position:absolute;width:20px;height:20px;right:2px;top:2px;background:#fff;border-radius:50%;transition:0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.3);}
+  .ios-toggle input:checked + .slider{background:var(--green);border-color:var(--green);}
+  .ios-toggle input:checked + .slider::before{transform:translateX(-18px);}
+
+  /* partial popup removed — using inline editing */
+
+  /* ── INLINE PARTIAL EDITOR (replaces popup) ── */
+  .pay-cell.editing{
+    height:auto!important;min-height:40px;
+    background:var(--card)!important;
+    outline:2px solid var(--gold);
+    outline-offset:-2px;
+    z-index:10;position:relative;
+    overflow:visible;
+  }
+  .inline-editor{
+    display:flex;flex-direction:column;align-items:center;
+    gap:3px;padding:4px 3px;width:100%;
+  }
+  .ie-label{font-size:0.58rem;color:var(--text-muted);white-space:nowrap;}
+  .ie-input{
+    width:100%;background:var(--bg2);border:1px solid var(--gold);
+    border-radius:4px;color:var(--text);font-family:'Heebo',sans-serif;
+    font-size:0.85rem;font-weight:700;padding:3px 4px;
+    text-align:center;direction:ltr;
+  }
+  .ie-input:focus{outline:none;}
+  .ie-btns{display:flex;gap:2px;width:100%;justify-content:center;}
+  .ie-btn{
+    flex:1;padding:3px 2px;border:none;border-radius:3px;
+    font-size:0.65rem;cursor:pointer;font-family:'Heebo',sans-serif;font-weight:700;
+    transition:opacity 0.1s;
+  }
+  .ie-btn:hover{opacity:0.8;}
+  .ie-cancel{background:var(--red-dim);color:var(--red);}
+  .ie-full  {background:var(--green-dim);color:var(--green);}
+  .ie-save  {background:var(--gold-dim);color:var(--gold);}
+  @media(max-width:640px){
+    .ie-input{font-size:1rem;padding:5px 4px;}
+    .ie-btn{font-size:0.72rem;padding:5px 2px;}
+  }
+
+  /* SUMMARY */
+  .sum-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:24px;}
+  .sum-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px;text-align:center;}
+  .sum-val{font-size:1.5rem;font-weight:900;font-family:'Frank Ruhl Libre',serif;}
+  .sum-lbl{font-size:0.73rem;color:var(--text-muted);margin-top:3px;}
+
+  .add-row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;background:var(--bg2);border:1px dashed var(--border-strong);border-radius:var(--radius);padding:18px;margin-bottom:18px;}
+  .add-row .fg{flex:1;min-width:120px;display:flex;flex-direction:column;gap:5px;}
+  .add-row .fg label{font-size:0.78rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;}
+  .add-row .fg input{background:var(--bg);border:1px solid var(--border-strong);border-radius:6px;color:var(--text);font-family:'Heebo',sans-serif;font-size:0.9rem;padding:9px 12px;direction:rtl;width:100%;}
+  .add-row .fg input:focus{outline:none;border-color:var(--gold);}
+
+  /* FINANCE TABLE */
+  .tx-admin-table{width:100%;border-collapse:collapse;font-size:0.85rem;}
+  .tx-admin-table th{background:var(--bg);color:var(--text-muted);font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;padding:10px 14px;text-align:right;border-bottom:2px solid var(--border);white-space:nowrap;}
+  .tx-admin-table td{padding:10px 14px;border-bottom:1px solid var(--border);text-align:right;vertical-align:middle;}
+  .tx-admin-table tr:last-child td{border-bottom:none;}
+  .tx-admin-table tr:hover td{background:rgba(255,255,255,0.02);}
+  .tx-income{color:var(--green);font-weight:700;}
+  .tx-expense{color:var(--red);font-weight:700;}
+
+  /* TICKET */
+  .ticket-row{display:flex;align-items:flex-start;gap:12px;padding:14px;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+  .ticket-row:last-child{border-bottom:none;}
+  .ticket-status-sel{background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'Heebo',sans-serif;font-size:0.82rem;padding:5px 10px;direction:rtl;}
+  .ticket-note-inp{background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'Heebo',sans-serif;font-size:0.82rem;padding:5px 10px;direction:rtl;flex:1;min-width:100px;}
+  .tkt-badge{display:inline-block;padding:2px 10px;border-radius:50px;font-size:0.72rem;font-weight:700;}
+  .tkt-badge.open{background:rgba(239,68,68,0.12);color:var(--red);}
+  .tkt-badge.in-progress{background:rgba(245,200,66,0.12);color:var(--gold);}
+  .tkt-badge.closed{background:var(--green-dim);color:var(--green);}
+
+  /* POLLS ADMIN */
+  .poll-admin-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;}
+  .poll-admin-result{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:0.85rem;}
+  .poll-result-bar{flex:1;height:8px;background:var(--bg3);border-radius:50px;overflow:hidden;}
+  .poll-result-fill{height:100%;background:var(--blue);border-radius:50px;transition:width 0.4s;}
+
+  /* BULLETIN ADMIN */
+  .bulletin-admin-row{display:flex;align-items:flex-start;gap:12px;padding:12px;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+  .bulletin-admin-row:last-child{border-bottom:none;}
+  .blt-cat-badge{display:inline-block;padding:2px 8px;border-radius:50px;font-size:0.72rem;font-weight:700;}
+  .blt-cat-badge.sale{background:rgba(99,102,241,0.12);color:var(--blue);}
+  .blt-cat-badge.service{background:var(--green-dim);color:var(--green);}
+  .blt-cat-badge.wanted{background:rgba(245,200,66,0.12);color:var(--gold);}
+  .blt-cat-badge.other{background:var(--bg3);color:var(--text-muted);}
+
+  /* WA button */
+  .wa-btn{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:50px;
+    background:#25D366;color:#fff;font-size:0.78rem;font-weight:700;text-decoration:none;
+    border:none;cursor:pointer;transition:opacity 0.15s;white-space:nowrap;}
+  .wa-btn:hover{opacity:0.85;}
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-icon">🔐</div>
+      <div class="logo-text">ממשק מנהל<span><%= buildingName %></span></div>
+    </div>
+    <nav class="header-nav" style="display:flex;align-items:center;gap:10px;">
+      <button class="theme-toggle" id="theme-toggle-btn">
+        <span id="theme-icon">☀️</span>
+        <div class="toggle-track"><div class="toggle-thumb"></div></div>
+        <span id="theme-label">בהיר</span>
+      </button>
+      <a href="/">← דיירים</a>
+    </nav>
+  </div>
+</header>
+
+<!-- LOGIN -->
+<div id="admin-login-overlay" class="admin-login-overlay">
+  <div class="admin-login-box">
+    <span class="lock-icon">🔐</span>
+    <h2>כניסת ועד בית</h2>
+    <p>אזור מוגן</p>
+    <p style="font-size:0.8rem;color:var(--gold);margin-bottom:16px;">סיסמת ברירת מחדל: <strong>vaad2024</strong></p>
+    <div class="form-group" style="text-align:right;">
+      <label>סיסמת מנהל</label>
+      <input type="password" id="admin-pass-input" placeholder="הזן סיסמה"
+        style="width:100%;background:var(--bg);border:1px solid var(--border-strong);border-radius:8px;color:var(--text);font-family:Heebo,sans-serif;font-size:1rem;padding:12px 14px;direction:rtl;margin-top:6px;">
+    </div>
+    <div id="admin-login-error" style="color:var(--red);font-size:0.85rem;margin:10px 0;display:none;padding:8px 12px;background:var(--red-dim);border-radius:6px;"></div>
+    <button class="btn btn-primary btn-full mt-12" id="admin-login-btn">כניסה למערכת</button>
+  </div>
+</div>
+
+<!-- PANEL -->
+<div id="admin-panel">
+  <div class="page-hero">
+    <h1>ניהול <span>ועד הבית</span></h1>
+    <p>שליטה מלאה על כל הנתונים</p>
+  </div>
+  <div class="container">
+
+    <div class="sum-cards">
+      <div class="sum-card"><div class="sum-val" id="sum-clean" style="color:var(--green);">—</div><div class="sum-lbl">ללא חוב</div></div>
+      <div class="sum-card"><div class="sum-val" id="sum-owed"  style="color:var(--red);">—</div><div class="sum-lbl">עם חוב</div></div>
+      <div class="sum-card"><div class="sum-val" id="sum-total" style="color:var(--gold);">—</div><div class="sum-lbl">חוב כולל ₪</div></div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="payments">📅 תשלומים</button>
+      <button class="tab-btn" data-tab="apartments">🏠 דירות</button>
+      <button class="tab-btn" data-tab="special">⚡ גביות מיוחדות</button>
+      <button class="tab-btn" data-tab="finance">💰 הכנסות/הוצאות</button>
+      <button class="tab-btn" data-tab="tickets">🔧 תקלות</button>
+      <button class="tab-btn" data-tab="polls">🗳️ סקרים</button>
+      <button class="tab-btn" data-tab="bulletin">📌 לוח מודעות</button>
+      <button class="tab-btn" data-tab="announcements">📢 הודעות</button>
+      <button class="tab-btn" data-tab="settings">⚙️ הגדרות</button>
+    </div>
+
+    <!-- ── PAYMENTS ──────────────────────────────────────────────── -->
+    <div class="tab-pane active" id="tab-payments">
+      <div class="legend">
+        <span class="leg-dot leg-full">✓ שולם מלא</span>
+        <span class="leg-dot leg-partial">~ חלקי</span>
+        <span class="leg-dot leg-unpaid">✗ לא שולם</span>
+        <span class="text-muted" style="font-size:0.76rem;margin-right:auto;">לחיצה = מלא/לא שולם | לחיצה ימנית = סכום חלקי</span>
+      </div>
+      <div class="year-tab-row" id="year-tabs">
+        <% years.forEach(y=>{ %>
+        <button class="year-tab <%=y===currentYear?'active':'  '%>" data-year="<%=y%>"><%=y%></button>
+        <% }) %>
+        <button class="btn btn-outline btn-sm" id="add-year-btn">+ שנה</button>
+      </div>
+      <div class="card" style="padding:0;">
+        <div class="matrix-wrapper">
+          <table class="matrix-table" id="payments-matrix">
+            <thead>
+              <tr>
+                <th class="apt-th" style="text-align:right;padding:9px 10px;">דירה</th>
+                <%['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'].forEach(m=>{%>
+                <th><%=m%></th>
+                <%})%>
+                <th>יתרה</th>
+                <th style="white-space:nowrap;">סמן הכל</th>
+              </tr>
+            </thead>
+            <tbody id="matrix-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── APARTMENTS ────────────────────────────────────────────── -->
+    <div class="tab-pane" id="tab-apartments">
+
+      <!-- legend -->
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;font-size:0.82rem;align-items:center;">
+        <span style="display:inline-flex;align-items:center;gap:5px;">
+          <span style="background:var(--blue-dim);border:1px solid rgba(99,102,241,0.3);color:var(--blue);padding:3px 10px;border-radius:50px;font-size:0.75rem;font-weight:700;">🏠 בעלים</span>
+          הדייר הוא בעל הדירה
+        </span>
+        <span style="display:inline-flex;align-items:center;gap:5px;">
+          <span style="background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.3);color:#d97706;padding:3px 10px;border-radius:50px;font-size:0.75rem;font-weight:700;">🔑 שכירות</span>
+          הדירה מושכרת — שם הבעלים + שם השוכר
+        </span>
+      </div>
+
+      <div class="card" style="padding:0;">
+        <div class="apt-table-wrap">
+          <!-- header -->
+          <div class="apt-grid-v2 hdr">
+            <div>#</div>
+            <div>סוג</div>
+            <div>שם בעל הדירה</div>
+            <div class="col-tenant">שם השוכר</div>
+            <div class="col-phone">טלפון</div>
+            <div class="col-pass">סיסמה חדשה</div>
+            <div class="col-pw">סיסמה</div>
+            <div class="col-note">הערה</div>
+            <div class="col-status">סטטוס</div>
+          </div>
+          <% apartments.forEach(apt=>{ %>
+          <div class="apt-grid-v2" data-apt-id="<%=apt.id%>">
+            <!-- # -->
+            <div><span class="apt-id-tag"><%=apt.id%></span></div>
+
+            <!-- type selector -->
+            <div>
+              <select class="type-select" style="background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'Heebo',sans-serif;font-size:0.82rem;padding:6px 10px;direction:rtl;width:100%;cursor:pointer;">
+                <option value="owner"  <%=(apt.ownerType||'owner')==='owner'  ?'selected':''%>>🏠 בעלים</option>
+                <option value="tenant" <%=(apt.ownerType||'owner')==='tenant' ?'selected':''%>>🔑 שכירות</option>
+              </select>
+            </div>
+
+            <!-- owner name -->
+            <div><input type="text" class="owner-input" value="<%=apt.ownerName||''%>" placeholder="שם בעל הדירה"></div>
+
+            <!-- tenant name — shown only when type=tenant -->
+            <div class="col-tenant tenant-field-wrap" style="<%=(apt.ownerType||'owner')==='tenant'?'':'opacity:0.3;pointer-events:none;'%>">
+              <input type="text" class="tenant-input" value="<%=apt.tenantName||''%>" placeholder="שם השוכר" style="<%=(apt.ownerType||'owner')==='tenant'?'border-color:rgba(245,158,11,0.5);':''%>">
+            </div>
+
+            <!-- phone -->
+            <div class="col-phone" style="display:flex;flex-direction:column;gap:4px;">
+              <input type="tel" class="phone-input" value="<%=apt.phone||''%>" placeholder="05X-XXXXXXX" dir="ltr" style="text-align:right;">
+              <% if(apt.phone){ const raw=apt.phone.replace(/\D/g,'').replace(/^0/,''); const waName=apt.ownerType==='tenant'&&apt.tenantName?apt.tenantName:(apt.ownerName||`דירה ${apt.id}`); %>
+              <a href="https://wa.me/972<%=raw%>?text=<%=encodeURIComponent('שלום '+waName+', אני מועד הבית.')%>" target="_blank" rel="noopener" class="wa-btn" style="font-size:0.72rem;padding:3px 10px;">💬 וואטסאפ</a>
+              <% } %>
+            </div>
+
+            <!-- new password -->
+            <div class="col-pass"><input type="text" class="pass-input" value="" placeholder="סיסמה חדשה"></div>
+
+            <!-- show current password -->
+            <div class="col-pw" style="display:flex;align-items:center;gap:5px;">
+              <span style="font-size:0.75rem;color:var(--text-dim);" id="cur-pass-<%=apt.id%>">•••</span>
+              <button class="btn btn-ghost btn-sm show-pass-btn" data-pass="<%=apt.password%>" data-id="<%=apt.id%>" style="font-size:0.72rem;padding:3px 7px;">הצג</button>
+            </div>
+
+            <!-- note -->
+            <div class="col-note"><input type="text" class="note-input" value="<%=apt.note||''%>" placeholder="הערה..."></div>
+
+            <!-- status badge -->
+            <div class="col-status"><span class="badge" id="row-status-<%=apt.id%>">—</span></div>
+          </div>
+          <% }) %>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SPECIAL ───────────────────────────────────────────────── -->
+    <div class="tab-pane" id="tab-special">
+      <div class="add-row">
+        <div class="fg"><label>שם הגבייה</label><input type="text" id="sc-name" placeholder="פיצוץ צינור..."></div>
+        <div class="fg"><label>תיאור</label><input type="text" id="sc-desc" placeholder="תיאור קצר"></div>
+        <div class="fg" style="max-width:140px;"><label>עלות לדירה (₪)</label><input type="number" id="sc-cost" placeholder="0" min="0"></div>
+        <div class="fg" style="max-width:160px;"><label>תאריך</label><input type="date" id="sc-date" style="background:var(--bg);border:1px solid var(--border-strong);border-radius:6px;color:var(--text);font-size:0.9rem;padding:9px 12px;width:100%;"></div>
+        <div class="fg" style="flex:none;"><label style="visibility:hidden;">x</label><button class="btn btn-green" id="add-sc-btn">+ הוסף</button></div>
+      </div>
+      <div id="sc-list">
+        <% specialCharges.forEach(sc=>{ %>
+        <div class="sc-card" id="sc-card-<%=sc.id%>" data-sc-id="<%=sc.id%>">
+          <div class="sc-hdr">
+            <input type="text"   class="sc-name" value="<%=sc.name%>" placeholder="שם" style="flex:2;min-width:120px;">
+            <input type="text"   class="sc-desc" value="<%=sc.description||''%>" placeholder="תיאור" style="flex:2;min-width:120px;">
+            <input type="number" class="sc-cost" value="<%=sc.costPerApartment%>" min="0" style="width:100px;">
+            <input type="date"   class="sc-date" value="<%=sc.date||''%>" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:0.84rem;padding:7px 10px;width:138px;">
+            <button class="btn btn-danger btn-sm delete-sc-btn">🗑</button>
+          </div>
+          <div class="text-muted text-small" style="margin-bottom:8px;">לחץ על דירה לסימון:</div>
+          <div class="sc-chips">
+            <%for(let i=1;i<=20;i++){const e=sc.apartments.find(a=>a.id===i);const p=e&&e.paid;%>
+            <div class="sc-chip <%=p?'paid':'  '%>" data-apt="<%=i%>"><%=p?'✓':'○'%> דירה <%=i%></div>
+            <%}%>
+          </div>
+        </div>
+        <% }) %>
+      </div>
+    </div>
+
+    <!-- ── TICKETS ────────────────────────────────────────────────── -->
+    <div class="tab-pane" id="tab-tickets">
+      <p class="text-muted" style="margin-bottom:16px;font-size:0.88rem;">קריאות שירות שהגישו הדיירים. שנה סטטוס והוסף הערה.</p>
+      <div class="card" style="padding:0;">
+        <% const tickets = tickets || []; %>
+        <% if(tickets.length === 0){ %>
+        <div style="text-align:center;padding:40px;color:var(--text-muted);">אין תקלות פתוחות 🎉</div>
+        <% } else { %>
+        <% tickets.forEach(tkt=>{ %>
+        <div class="ticket-row" data-tkt-id="<%=tkt.id%>">
+          <div style="flex:1;min-width:180px;">
+            <div style="font-weight:700;margin-bottom:4px;"><%=tkt.title%></div>
+            <%if(tkt.description){%><div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:4px;"><%=tkt.description%></div><%}%>
+            <div style="font-size:0.76rem;color:var(--text-dim);">
+              דירה <%=tkt.aptId%> — <%=tkt.ownerName||''%> |
+              <%=new Date(tkt.createdAt).toLocaleDateString('he-IL')%>
+            </div>
+            <%if(tkt.adminNote){%><div style="font-size:0.8rem;color:var(--blue);margin-top:4px;">📝 <%=tkt.adminNote%></div><%}%>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;flex-shrink:0;">
+            <span class="tkt-badge <%=tkt.status%>"><%=tkt.status==='open'?'פתוח':tkt.status==='in-progress'?'בטיפול':'סגור'%></span>
+            <select class="ticket-status-sel" onchange="updateTicket('<%=tkt.id%>',this.value,null)">
+              <option value="open"        <%=tkt.status==='open'       ?'selected':''%>>פתוח</option>
+              <option value="in-progress" <%=tkt.status==='in-progress'?'selected':''%>>בטיפול</option>
+              <option value="closed"      <%=tkt.status==='closed'     ?'selected':''%>>סגור</option>
+            </select>
+            <div style="display:flex;gap:6px;">
+              <input class="ticket-note-inp" placeholder="הערת מנהל..." value="<%=tkt.adminNote||''%>"
+                onblur="updateTicket('<%=tkt.id%>',null,this.value)" style="width:160px;">
+              <button class="btn btn-danger btn-sm" onclick="deleteTicket('<%=tkt.id%>',this)">🗑</button>
+            </div>
+          </div>
+        </div>
+        <% }) %>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- ── POLLS ──────────────────────────────────────────────────── -->
+    <div class="tab-pane" id="tab-polls">
+      <p class="text-muted" style="margin-bottom:16px;font-size:0.88rem;">צור סקרים שיוצגו לכל הדיירים בדף הראשי.</p>
+
+      <!-- Add poll form -->
+      <div class="add-row" style="flex-direction:column;gap:10px;">
+        <div style="font-size:0.85rem;font-weight:700;color:var(--text-muted);">+ סקר חדש</div>
+        <div class="fg" style="width:100%;"><label>שאלה</label>
+          <input type="text" id="poll-q" placeholder="האם להחליף חברת ניקיון?" style="width:100%;background:var(--bg);border:1px solid var(--border-strong);border-radius:6px;color:var(--text);font-family:'Heebo',sans-serif;font-size:0.9rem;padding:9px 12px;direction:rtl;">
+        </div>
+        <div id="poll-options-wrap" style="display:flex;flex-direction:column;gap:6px;width:100%;">
+          <input type="text" class="poll-opt-inp" placeholder="אפשרות 1" style="background:var(--bg);border:1px solid var(--border-strong);border-radius:6px;color:var(--text);font-family:'Heebo',sans-serif;font-size:0.88rem;padding:8px 12px;direction:rtl;">
+          <input type="text" class="poll-opt-inp" placeholder="אפשרות 2" style="background:var(--bg);border:1px solid var(--border-strong);border-radius:6px;color:var(--text);font-family:'Heebo',sans-serif;font-size:0.88rem;padding:8px 12px;direction:rtl;">
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-outline btn-sm" id="add-poll-opt-btn">+ אפשרות</button>
+          <button class="btn btn-primary" id="add-poll-btn">צור סקר</button>
+        </div>
+      </div>
+
+      <!-- Poll list -->
+      <div id="polls-list" style="margin-top:16px;">
+        <% (polls||[]).forEach(poll=>{ const total=Object.keys(poll.votes||{}).length; %>
+        <div class="poll-admin-card" data-poll-id="<%=poll.id%>">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+            <div>
+              <div style="font-weight:700;"><%=poll.question%></div>
+              <div style="font-size:0.76rem;color:var(--text-dim);"><%=new Date(poll.createdAt).toLocaleDateString('he-IL')%> | <%=total%> מצביעים</div>
+            </div>
+            <div style="display:flex;gap:6px;flex-shrink:0;">
+              <button class="btn btn-outline btn-sm toggle-poll-btn" data-poll-id="<%=poll.id%>">
+                <%=poll.active?'⏸ השהה':'▶ הפעל'%>
+              </button>
+              <button class="btn btn-danger btn-sm delete-poll-btn" data-poll-id="<%=poll.id%>">🗑</button>
+            </div>
+          </div>
+          <% poll.options.forEach((opt,i)=>{ const cnt=Object.values(poll.votes||{}).filter(v=>v===i).length; const pct=total>0?Math.round(cnt/total*100):0; %>
+          <div class="poll-admin-result">
+            <span style="min-width:100px;font-size:0.83rem;"><%=opt%></span>
+            <div class="poll-result-bar"><div class="poll-result-fill" style="width:<%=pct%>%"></div></div>
+            <span style="font-size:0.78rem;color:var(--text-muted);white-space:nowrap;"><%=cnt%> (<%=pct%>%)</span>
+          </div>
+          <% }) %>
+          <div style="margin-top:6px;display:flex;align-items:center;gap:8px;">
+            <span class="badge <%=poll.active?'badge-green':'badge-red'%>"><%=poll.active?'פעיל':'מושהה'%></span>
+          </div>
+        </div>
+        <% }) %>
+      </div>
+    </div>
+
+    <!-- ── BULLETIN ────────────────────────────────────────────────── -->
+    <div class="tab-pane" id="tab-bulletin">
+      <p class="text-muted" style="margin-bottom:16px;font-size:0.88rem;">מודעות שפרסמו הדיירים. ניתן להסתיר או למחוק.</p>
+      <div class="card" style="padding:0;">
+        <% const bulletin = bulletin||[]; %>
+        <% if(bulletin.length===0){ %>
+        <div style="text-align:center;padding:40px;color:var(--text-muted);">אין מודעות עדיין.</div>
+        <% } else { %>
+        <% const catLabels={sale:'🛒 מכירה',service:'🔧 בעל מקצוע',wanted:'🔍 מחפש',other:'📋 אחר'}; %>
+        <% bulletin.forEach(b=>{ %>
+        <div class="bulletin-admin-row" data-blt-id="<%=b.id%>">
+          <div style="flex:1;min-width:160px;">
+            <span class="blt-cat-badge <%=b.category%>"><%=catLabels[b.category]||'📋 אחר'%></span>
+            <span style="font-size:0.75rem;color:var(--text-dim);margin-right:8px;">דירה <%=b.aptId%></span>
+            <div style="font-weight:700;margin-top:4px;"><%=b.title%></div>
+            <%if(b.body){%><div style="font-size:0.82rem;color:var(--text-muted);"><%=b.body%></div><%}%>
+            <div style="font-size:0.72rem;color:var(--text-dim);margin-top:4px;"><%=new Date(b.createdAt).toLocaleDateString('he-IL')%></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;flex-shrink:0;">
+            <span class="badge <%=b.active?'badge-green':'badge-red'%>"><%=b.active?'פעיל':'מוסתר'%></span>
+            <button class="btn btn-outline btn-sm toggle-blt-btn" data-blt-id="<%=b.id%>"><%=b.active?'הסתר':'הצג'%></button>
+            <button class="btn btn-danger btn-sm delete-blt-btn" data-blt-id="<%=b.id%>">🗑</button>
+          </div>
+        </div>
+        <% }) %>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- ── ANNOUNCEMENTS ─────────────────────────────────────────── -->
+    <div class="tab-pane" id="tab-announcements">
+      <p class="text-muted" style="margin-bottom:16px;font-size:0.88rem;">הודעות אלו יוצגו בפס בראש מסך הדיירים. ניתן להוסיף, לערוך, להסתיר או למחוק.</p>
+      <div id="ann-list">
+        <% (announcements||[]).forEach((ann,idx)=>{ %>
+        <div class="ann-admin-card" data-ann-id="<%=ann.id%>">
+          <div style="display:flex;flex-direction:column;gap:6px;align-items:center;flex-shrink:0;">
+            <input type="text" class="ann-icon-input" value="<%=ann.icon||'📢'%>" style="width:48px;text-align:center;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:1.2rem;padding:6px;">
+            <label class="ios-toggle" title="הצג/הסתר">
+              <input type="checkbox" class="ann-active-chk" <%=ann.active?'checked':''%>>
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="ann-row">
+            <input type="text" class="ann-title-input" value="<%=ann.title%>" placeholder="כותרת">
+            <textarea class="ann-body-input" placeholder="תוכן ההודעה"><%=ann.body%></textarea>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
+            <button class="btn btn-danger btn-sm delete-ann-btn">🗑</button>
+          </div>
+        </div>
+        <% }) %>
+      </div>
+      <button class="btn btn-outline mt-16" id="add-ann-btn">+ הוסף הודעה</button>
+    </div>
+
+    <!-- ── SETTINGS ──────────────────────────────────────────────── -->
+    <div class="tab-pane" id="tab-settings">
+      <div class="card" style="margin-bottom:16px;">
+        <h3 class="section-title" style="margin-bottom:18px;">פרטי הבניין</h3>
+        <div class="settings-grid">
+          <div class="form-group"><label>שם הבניין</label><input type="text" id="set-bname" value="<%=buildingName%>"></div>
+          <div class="form-group"><label>כתובת</label><input type="text" id="set-baddress" value="<%=buildingAddress%>"></div>
+          <div class="form-group"><label>ועד חודשי (₪)</label><input type="number" id="set-fee" value="<%=monthlyFee%>"></div>
+        </div>
+        <div style="margin-top:18px;">
+          <div class="toggle-row">
+            <div>
+              <div class="t-label">הצג חובות ציבוריים</div>
+              <div class="t-desc">האם להציג את מצב החוב של כל דירה בדף הראשי לכולם</div>
+            </div>
+            <label class="ios-toggle">
+              <input type="checkbox" id="set-show-debts" <%=showPublicDebts?'checked':'  '%>>
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="toggle-row">
+            <div>
+              <div class="t-label">הצג דו"ח פיננסי</div>
+              <div class="t-desc">האם להציג את הכנסות/הוצאות הקופה בדף הראשי</div>
+            </div>
+            <label class="ios-toggle">
+              <input type="checkbox" id="set-show-finance" <%=showFinancialReport?'checked':'  '%>>
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:16px;">
+        <h3 class="section-title" style="margin-bottom:18px;">פרטי בנק ו-PayBox</h3>
+        <div class="settings-grid">
+          <div class="form-group"><label>שם הבנק</label><input type="text" id="set-bank" value="<%=bankDetails.bank%>"></div>
+          <div class="form-group"><label>סניף</label><input type="text" id="set-branch" value="<%=bankDetails.branch%>"></div>
+          <div class="form-group"><label>מספר חשבון</label><input type="text" id="set-account" value="<%=bankDetails.account%>"></div>
+          <div class="form-group"><label>שם הנהנה</label><input type="text" id="set-beneficiary" value="<%=bankDetails.beneficiary%>"></div>
+        </div>
+        <div class="form-group mt-12">
+          <label>קישור PayBox</label>
+          <input type="text" id="set-paybox" value="<%=payboxLink%>" style="width:100%;background:var(--bg2);border:1px solid var(--border-strong);border-radius:6px;color:var(--text);font-family:Heebo,sans-serif;font-size:0.9rem;padding:10px 12px;direction:rtl;">
+        </div>
+      </div>
+      <div class="card">
+        <h3 class="section-title" style="margin-bottom:18px;">שינוי סיסמת מנהל</h3>
+        <div class="settings-grid">
+          <div class="form-group"><label>סיסמה חדשה (4+ תווים)</label><input type="password" id="set-new-pass" placeholder="השאר ריק כדי לא לשנות"></div>
+          <div class="form-group"><label>אימות</label><input type="password" id="set-new-pass2" placeholder="הזן שוב"></div>
+        </div>
+      </div>
+
+      <!-- BACKUP / RESTORE -->
+      <div class="card" style="margin-top:16px;">
+        <h3 class="section-title" style="margin-bottom:6px;">גיבוי ושחזור נתונים</h3>
+        <p class="text-muted" style="font-size:0.82rem;margin-bottom:18px;">
+          גיבוי אוטומטי פועל כל יום ראשון. שומר 5 גיבויים אחרונים. מומלץ לגבות לפני כל עדכון קוד.
+        </p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
+          <button class="btn btn-outline" id="backup-btn">⬇️ הורד גיבוי (JSON)</button>
+          <button class="btn btn-outline" id="backup-now-btn">💾 גבה עכשיו</button>
+          <label class="btn btn-outline" style="cursor:pointer;">
+            ⬆️ שחזר מגיבוי
+            <input type="file" id="restore-file" accept=".json" style="display:none;">
+          </label>
+        </div>
+        <!-- Auto-backup list -->
+        <div id="auto-backups-wrap" style="margin-top:8px;">
+          <div style="font-size:0.8rem;font-weight:700;color:var(--text-muted);margin-bottom:8px;">גיבויים אוטומטיים:</div>
+          <div id="auto-backups-list" style="font-size:0.82rem;color:var(--text-dim);">טוען...</div>
+        </div>
+        <div id="restore-status" style="margin-top:12px;font-size:0.85rem;display:none;"></div>
+      </div>
+    </div>
+
+    <!-- ── FINANCE ───────────────────────────────────────────────── -->
+    <div class="tab-pane" id="tab-finance">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;" id="fin-summary-admin">
+        <div class="sum-card" style="border:1px solid var(--blue-dim);">
+          <div class="sum-val" id="fin-opening" style="color:var(--blue);">₪0</div>
+          <div class="sum-lbl">יתרת פתיחה</div>
+        </div>
+        <div class="sum-card"><div class="sum-val" id="fin-income" style="color:var(--green);">₪0</div><div class="sum-lbl">סה"כ הכנסות</div></div>
+        <div class="sum-card"><div class="sum-val" id="fin-expense" style="color:var(--red);">₪0</div><div class="sum-lbl">סה"כ הוצאות</div></div>
+        <div class="sum-card" style="border:2px solid rgba(245,200,66,0.4);"><div class="sum-val" id="fin-balance" style="color:var(--gold);">₪0</div><div class="sum-lbl" style="font-weight:700;">יתרה נוכחית</div></div>
+      </div>
+      <div style="font-size:0.76rem;color:var(--text-dim);margin-bottom:18px;direction:rtl;" id="fin-formula">
+        יתרה = יתרת פתיחה + הכנסות − הוצאות
+      </div>
+
+      <!-- Opening balance input -->
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 18px;flex-wrap:wrap;">
+        <label style="font-size:0.85rem;font-weight:700;color:var(--text);white-space:nowrap;">💰 יתרת פתיחה (₪):</label>
+        <input type="number" id="opening-balance-input" value="<%=typeof openingBalance!=='undefined'?openingBalance:0%>"
+          min="0" step="1"
+          style="background:var(--bg);border:1px solid var(--border-strong);border-radius:6px;color:var(--text);font-family:'Heebo',sans-serif;font-size:1rem;font-weight:700;padding:9px 14px;direction:rtl;width:160px;"
+          placeholder="0">
+        <span style="font-size:0.8rem;color:var(--text-muted);">זהו הסכום שהיה בקופה לפני תחילת הרישום במערכת</span>
+      </div>
+
+      <!-- Add transaction form -->
+      <div class="add-row">
+        <div class="fg" style="max-width:120px;">
+          <label>סוג</label>
+          <select id="tx-type" style="background:var(--bg);border:1px solid var(--border-strong);border-radius:6px;color:var(--text);font-family:Heebo,sans-serif;font-size:0.9rem;padding:9px 12px;direction:rtl;width:100%;">
+            <option value="income">💚 הכנסה</option>
+            <option value="expense">🔴 הוצאה</option>
+          </select>
+        </div>
+        <div class="fg"><label>קטגוריה</label><input type="text" id="tx-cat" placeholder="ועד, תיקון, גינון..."></div>
+        <div class="fg"><label>תיאור</label><input type="text" id="tx-desc" placeholder="פירוט הפעולה"></div>
+        <div class="fg" style="max-width:130px;"><label>סכום (₪)</label><input type="number" id="tx-amount" placeholder="0" min="0"></div>
+        <div class="fg" style="max-width:160px;"><label>תאריך</label><input type="date" id="tx-date" style="background:var(--bg);border:1px solid var(--border-strong);border-radius:6px;color:var(--text);font-size:0.9rem;padding:9px 12px;width:100%;"></div>
+        <div class="fg" style="flex:none;"><label style="visibility:hidden;">x</label><button class="btn btn-primary" id="add-tx-btn">+ הוסף</button></div>
+      </div>
+
+      <!-- Transactions table -->
+      <div class="card" style="padding:0;">
+        <div style="overflow-x:auto;">
+          <table class="tx-admin-table" id="tx-table">
+            <thead>
+              <tr>
+                <th>תאריך</th><th>סוג</th><th>קטגוריה</th><th>תיאור</th><th>סכום</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="tx-body">
+              <% (transactions||[]).slice().sort((a,b)=>new Date(b.date)-new Date(a.date)).forEach(tx=>{ %>
+              <tr data-tx-id="<%=tx.id%>">
+                <td style="color:var(--text-muted);font-size:0.8rem;white-space:nowrap;"><%=tx.date||'—'%></td>
+                <td><span class="badge <%=tx.type==='income'?'badge-green':'badge-red'%>"><%=tx.type==='income'?'הכנסה':'הוצאה'%></span></td>
+                <td><%=tx.category||'—'%></td>
+                <td><%=tx.description||'—'%></td>
+                <td class="<%=tx.type==='income'?'tx-income':'tx-expense'%>" style="font-weight:700;">
+                  <%=tx.type==='income'?'+':'-'%>₪<%=(tx.amount||0).toLocaleString()%>
+                </td>
+                <td><button class="btn btn-danger btn-sm delete-tx-btn" style="padding:4px 10px;">🗑</button></td>
+              </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /container -->
+  <div class="save-bar">
+    <span class="text-muted" style="align-self:center;font-size:0.83rem;">Ctrl+S לשמירה</span>
+    <button class="btn btn-primary" id="save-all-btn">💾 שמור הכל</button>
+  </div>
+</div>
+
+<!-- inline partial editing — no popup needed -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+const MONTHS_HE = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+let adminPassword = '';
+let currentYear   = <%=currentYear%>;
+let currentMonth  = <%=currentMonth%>;
+let activeYear    = <%=currentYear%>;
+const serverApartments = <%-JSON.stringify(apartments)%>;
+const serverYears      = <%-JSON.stringify(years)%>;
+let serverMonthlyFee   = <%=monthlyFee%>;
+
+// transactions in memory
+let txList = <%-JSON.stringify(transactions||[])%>;
+
+let payments = {};
+serverApartments.forEach(a=>{
+  payments[a.id]={};
+  Object.keys(a.payments||{}).forEach(k=>{
+    const v=a.payments[k];
+    payments[a.id][k]=typeof v==='boolean'?(v?serverMonthlyFee:0):(Number(v)||0);
+  });
+});
+
+// THEME
+function applyTheme(mode){
+  document.body.classList.toggle('light',mode==='light');
+  document.documentElement.classList.toggle('pre-light', mode==='light');
+  const i=document.getElementById('theme-icon'),l=document.getElementById('theme-label');
+  if(i) i.textContent=mode==='light'?'☀️':'🌙';
+  if(l) l.textContent=mode==='light'?'בהיר':'כהה';
+  localStorage.setItem('vaad_theme',mode);
+}
+applyTheme(localStorage.getItem('vaad_theme')||'light');
+document.getElementById('theme-toggle-btn').addEventListener('click',()=>{
+  applyTheme(document.body.classList.contains('light')?'dark':'light');
+});
+
+// TOAST
+function showToast(msg,type='success'){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className=`toast show ${type}`;
+  setTimeout(()=>{t.className='toast';},3200);
+}
+
+// TABS
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+    if(btn.dataset.tab==='apartments') updateAllAptStatuses();
+  });
+});
+
+// LOGIN
+async function doAdminLogin(){
+  const pass=document.getElementById('admin-pass-input').value.trim();
+  if(!pass) return;
+  const btn=document.getElementById('admin-login-btn');
+  btn.disabled=true;btn.textContent='...';
+  try{
+    const r=await fetch('/api/admin/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pass})});
+    const d=await r.json();
+    if(d.success){
+      adminPassword=pass;
+      document.getElementById('admin-login-overlay').style.display='none';
+      document.getElementById('admin-panel').classList.add('visible');
+      renderMatrix(activeYear);
+      updateSummary();
+      calcFinSummary();
+      showToast('ברוך הבא!');
+    } else {
+      const el=document.getElementById('admin-login-error');
+      el.style.display='block';el.textContent='סיסמה שגויה';
+    }
+  }catch(e){
+    document.getElementById('admin-login-error').style.display='block';
+    document.getElementById('admin-login-error').textContent='שגיאת רשת';
+  }finally{btn.disabled=false;btn.textContent='כניסה למערכת';}
+}
+document.getElementById('admin-login-btn').addEventListener('click',doAdminLogin);
+document.getElementById('admin-pass-input').addEventListener('keydown',e=>{if(e.key==='Enter')doAdminLogin();});
+
+// Auto-login if coming from main login page
+(function(){
+  const stored = sessionStorage.getItem('vaad_admin_pass');
+  if(stored){
+    sessionStorage.removeItem('vaad_admin_pass');
+    document.getElementById('admin-pass-input').value = stored;
+    doAdminLogin();
+  }
+})();
+
+// CALC DEBT
+function calcAptDebt(aptId){
+  let debt=0;
+  serverYears.forEach(year=>{
+    const months=year<currentYear?12:year===currentYear?currentMonth:0;
+    for(let m=1;m<=months;m++){
+      const paid=payments[aptId][`${year}-${m}`]||0;
+      debt+=Math.max(0,serverMonthlyFee-paid);
+    }
+  });
+  return debt;
+}
+
+// MATRIX
+function cellState(aptId,key){
+  const p=payments[aptId][key]||0;
+  return p<=0?'unpaid':p>=serverMonthlyFee?'full':'partial';
+}
+
+function renderMatrix(year){
+  activeYear=year;
+  document.querySelectorAll('.year-tab').forEach(t=>t.classList.toggle('active',parseInt(t.dataset.year)===year));
+  const tbody=document.getElementById('matrix-body');
+  tbody.innerHTML='';
+  const monthsToShow=year<currentYear?12:year===currentYear?currentMonth:0;
+
+  serverApartments.forEach(apt=>{
+    const tr=document.createElement('tr');
+    let html=`<td class="apt-th">דירה ${apt.id}<span class="apt-owner">${apt.ownerName||''}</span></td>`;
+    for(let m=1;m<=12;m++){
+      const key=`${year}-${m}`;
+      if(m>monthsToShow){
+        html+=`<td><div class="pay-cell future">—</div></td>`;
+      } else {
+        const state=cellState(apt.id,key);
+        const paid=payments[apt.id][key]||0;
+        const icon=state==='full'?'✓':state==='unpaid'?'✗':'';
+        const amtLine=state==='partial'?`<span class="cell-amount" style="font-size:0.72rem;font-weight:700;">₪${paid}</span>`:'';
+        html+=`<td><div class="pay-cell ${state}" data-apt="${apt.id}" data-key="${key}" data-year="${year}" data-month="${m}">
+          ${icon?`<span>${icon}</span>`:''}${amtLine}
+          <button class="partial-btn" title="תשלום חלקי">✏</button>
+        </div></td>`;
+      }
+    }
+    const debt=calcAptDebt(apt.id);
+    html+=`<td style="padding:6px;white-space:nowrap;">
+      <span id="mtx-debt-${apt.id}" style="font-weight:700;font-size:0.8rem;color:${debt===0?'var(--green)':'var(--red)'};">
+        ${debt===0?'✓':'₪'+debt.toLocaleString()}</span>
+      ${debt>0&&apt.phone?`<button onclick="sendWaReminder(${apt.id})" title="שלח תזכורת וואטסאפ" style="background:none;border:none;cursor:pointer;font-size:0.9rem;margin-right:3px;">💬</button>`:''}
+      </td>`;
+    // mark-all button
+    const allPaid=checkAllPaidForYear(apt.id,year,monthsToShow);
+    html+=`<td style="padding:4px 6px;text-align:center;">
+      <button class="mark-all-btn" data-apt="${apt.id}" data-year="${year}" data-months="${monthsToShow}" data-state="${allPaid?'full':'unpaid'}">
+        ${allPaid?'✗ בטל הכל':'✓ שולם הכל'}
+      </button></td>`;
+    tr.innerHTML=html;
+    tbody.appendChild(tr);
+  });
+
+  // left click = toggle full/unpaid; ✏ button = inline editor
+  tbody.querySelectorAll('.pay-cell[data-apt]').forEach(cell=>{
+    let pressTimer=null;
+
+    cell.addEventListener('click', e=>{
+      if (activeInlineCell) return; // editor open — ignore
+      // ✏ button opens inline editor
+      if(e.target.closest('.partial-btn')){
+        e.stopPropagation();
+        openInlineEditor(cell);
+        return;
+      }
+      const aptId=parseInt(cell.dataset.apt),key=cell.dataset.key;
+      const cur=payments[aptId][key]||0;
+      payments[aptId][key]=cur>=serverMonthlyFee?0:serverMonthlyFee;
+      refreshCell(cell,aptId,key);
+      updateDebtCell(aptId);updateSummary();
+      refreshMarkAllBtn(cell.closest('tr'),aptId,parseInt(cell.dataset.year),monthsToShow);
+    });
+
+    // long press mobile → inline editor
+    cell.addEventListener('touchstart',()=>{
+      pressTimer=setTimeout(()=>openInlineEditor(cell),500);
+    },{passive:true});
+    cell.addEventListener('touchend', ()=>clearTimeout(pressTimer));
+    cell.addEventListener('touchmove',()=>clearTimeout(pressTimer));
+  });
+
+  // mark-all buttons
+  tbody.querySelectorAll('.mark-all-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const aptId=parseInt(btn.dataset.apt);
+      const yr=parseInt(btn.dataset.year);
+      const months=parseInt(btn.dataset.months);
+      const isFull=btn.dataset.state==='full';
+      for(let m=1;m<=months;m++){
+        payments[aptId][`${yr}-${m}`]=isFull?0:serverMonthlyFee;
+      }
+      renderMatrix(yr); // re-render to refresh all cells
+      updateSummary();
+    });
+  });
+}
+
+function checkAllPaidForYear(aptId,year,months){
+  for(let m=1;m<=months;m++){
+    if((payments[aptId][`${year}-${m}`]||0)<serverMonthlyFee) return false;
+  }
+  return months>0;
+}
+
+function refreshMarkAllBtn(tr,aptId,year,months){
+  const btn=tr.querySelector('.mark-all-btn');
+  if(!btn) return;
+  const allPaid=checkAllPaidForYear(aptId,year,months);
+  btn.dataset.state=allPaid?'full':'unpaid';
+  btn.textContent=allPaid?'✗ בטל הכל':'✓ שולם הכל';
+}
+
+function refreshCell(cell,aptId,key){
+  const state=cellState(aptId,key);
+  const paid=payments[aptId][key]||0;
+  const icon=state==='full'?'✓':state==='unpaid'?'✗':'';
+  const amtLine=state==='partial'?`<span class="cell-amount" style="font-size:0.72rem;font-weight:700;">₪${paid}</span>`:'';
+  cell.className=`pay-cell ${state}`;
+  cell.innerHTML=`${icon?`<span>${icon}</span>`:''}${amtLine}<button class="partial-btn" title="תשלום חלקי">✏</button>`;
+}
+
+function updateDebtCell(aptId){
+  const debt=calcAptDebt(aptId);
+  const el=document.getElementById(`mtx-debt-${aptId}`);
+  if(el){el.style.color=debt===0?'var(--green)':'var(--red)';el.textContent=debt===0?'✓':'₪'+debt.toLocaleString();}
+  updateAptRowStatus(aptId);
+}
+
+// YEAR TABS
+document.getElementById('year-tabs').addEventListener('click',e=>{
+  const btn=e.target.closest('.year-tab');
+  if(btn) renderMatrix(parseInt(btn.dataset.year));
+});
+document.getElementById('add-year-btn').addEventListener('click',async()=>{
+  const maxY=Math.max(...serverYears);const newY=maxY+1;
+  if(!confirm(`להוסיף שנת ${newY}?`)) return;
+  try{
+    const r=await fetch('/api/admin/add-year',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({adminPassword,year:newY})});
+    const d=await r.json();
+    if(d.success){
+      serverYears.push(newY);serverYears.sort((a,b)=>a-b);
+      const btn=document.createElement('button');btn.className='year-tab';btn.dataset.year=newY;btn.textContent=newY;
+      document.getElementById('year-tabs').insertBefore(btn,document.getElementById('add-year-btn'));
+      renderMatrix(newY);showToast(`שנת ${newY} נוספה!`);
+    }
+  }catch(e){showToast('שגיאה','error');}
+});
+
+// SUMMARY
+function updateSummary(){
+  let clean=0,owed=0,total=0;
+  serverApartments.forEach(a=>{
+    const d=calcAptDebt(a.id);
+    if(d===0) clean++; else{owed++;total+=d;}
+  });
+  document.getElementById('sum-clean').textContent=clean;
+  document.getElementById('sum-owed').textContent=owed;
+  document.getElementById('sum-total').textContent='₪'+total.toLocaleString();
+}
+
+function updateAptRowStatus(aptId){
+  const el=document.getElementById(`row-status-${aptId}`);
+  if(!el) return;
+  const d=calcAptDebt(aptId);
+  el.className='badge '+(d===0?'badge-green':'badge-red');
+  el.textContent=d===0?'שולם':'₪'+d.toLocaleString();
+}
+function updateAllAptStatuses(){serverApartments.forEach(a=>updateAptRowStatus(a.id));}
+
+// TENANT TYPE TOGGLE
+document.addEventListener('change',e=>{
+  const sel=e.target.closest('.type-select');
+  if(!sel) return;
+  const row=sel.closest('.apt-grid-v2');
+  if(!row) return;
+  const wrap=row.querySelector('.tenant-field-wrap');
+  const input=row.querySelector('.tenant-input');
+  if(!wrap||!input) return;
+  const isTenant=sel.value==='tenant';
+  wrap.style.opacity=isTenant?'1':'0.3';
+  wrap.style.pointerEvents=isTenant?'auto':'none';
+  wrap.classList.toggle('active',isTenant);
+  if(!isTenant) input.value='';
+  else setTimeout(()=>input.focus(),50);
+});
+
+// SHOW PASSWORD
+document.addEventListener('click',e=>{
+  const btn=e.target.closest('.show-pass-btn');
+  if(!btn) return;
+  const id=btn.dataset.id;const el=document.getElementById(`cur-pass-${id}`);
+  if(el.textContent==='•••'){el.textContent=btn.dataset.pass;btn.textContent='הסתר';}
+  else{el.textContent='•••';btn.textContent='הצג';}
+});
+
+// right-click → inline editor (registered ONCE, survives re-renders)
+document.getElementById('payments-matrix').addEventListener('contextmenu', e=>{
+  e.preventDefault();
+  const cell = e.target.closest('.pay-cell[data-apt]');
+  if(cell) openInlineEditor(cell);
+});
+
+// ══ INLINE PARTIAL EDITOR ════════════════════════════════════════════════
+// Opens a mini editor INSIDE the cell itself — no popup, no overlay.
+// Right-click (desktop) or long-press (mobile) activates it.
+
+let activeInlineCell = null;
+
+function openInlineEditor(cell) {
+  // Close any existing editor first
+  closeInlineEditor();
+
+  activeInlineCell = cell;
+  const aptId = parseInt(cell.dataset.apt);
+  const key   = cell.dataset.key;
+  const [yr, mn] = key.split('-');
+  const cur   = payments[aptId][key] || 0;
+
+  // Save original cell content to restore on cancel
+  cell.dataset.origHtml = cell.innerHTML;
+
+  // Build inline editor HTML
+  cell.innerHTML = `
+    <div class="inline-editor" onclick="event.stopPropagation()">
+      <div class="ie-label">₪ / ${serverMonthlyFee}</div>
+      <input class="ie-input" type="number" min="0" max="${serverMonthlyFee}"
+             value="${cur > 0 ? cur : ''}" placeholder="${serverMonthlyFee}"
+             inputmode="numeric" id="ie-inp-${aptId}-${mn}">
+      <div class="ie-btns">
+        <button class="ie-btn ie-cancel" title="ביטול">✕</button>
+        <button class="ie-btn ie-full"   title="שולם מלא">✓</button>
+        <button class="ie-btn ie-save"   title="שמור">💾</button>
+      </div>
+    </div>`;
+
+  cell.classList.add('editing');
+
+  const inp = cell.querySelector('.ie-input');
+  inp.focus();
+  inp.select();
+
+  // Save on Enter, cancel on Escape
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter')  { e.preventDefault(); saveInline(cell); }
+    if (e.key === 'Escape') { e.preventDefault(); closeInlineEditor(); }
+  });
+
+  cell.querySelector('.ie-save').addEventListener('click',   e => { e.stopPropagation(); saveInline(cell); });
+  cell.querySelector('.ie-full').addEventListener('click',   e => { e.stopPropagation(); saveInlineFull(cell); });
+  cell.querySelector('.ie-cancel').addEventListener('click', e => { e.stopPropagation(); closeInlineEditor(); });
+}
+
+function saveInline(cell) {
+  const inp   = cell.querySelector('.ie-input');
+  if (!inp) return;
+  const aptId = parseInt(cell.dataset.apt);
+  const key   = cell.dataset.key;
+  const val   = Math.min(Math.max(parseInt(inp.value) || 0, 0), serverMonthlyFee);
+  payments[aptId][key] = val;
+  activeInlineCell = null;          // clear BEFORE refreshCell so close-outside won't re-trigger
+  cell.classList.remove('editing');
+  refreshCell(cell, aptId, key);
+  refreshMarkAllBtn(cell.closest('tr'), aptId, parseInt(cell.dataset.year),
+    parseInt(cell.dataset.year) < currentYear ? 12 : currentMonth);
+  updateDebtCell(aptId);
+  updateSummary();
+}
+
+function saveInlineFull(cell) {
+  const aptId = parseInt(cell.dataset.apt);
+  const key   = cell.dataset.key;
+  payments[aptId][key] = serverMonthlyFee;
+  activeInlineCell = null;
+  cell.classList.remove('editing');
+  refreshCell(cell, aptId, key);
+  refreshMarkAllBtn(cell.closest('tr'), aptId, parseInt(cell.dataset.year),
+    parseInt(cell.dataset.year) < currentYear ? 12 : currentMonth);
+  updateDebtCell(aptId);
+  updateSummary();
+}
+
+function closeInlineEditor() {
+  if (!activeInlineCell) return;
+  const cell  = activeInlineCell;
+  const aptId = parseInt(cell.dataset.apt);
+  const key   = cell.dataset.key;
+  activeInlineCell = null;
+  cell.classList.remove('editing');
+  refreshCell(cell, aptId, key);
+}
+
+// Close editor only on click OUTSIDE the matrix entirely
+document.addEventListener('click', e => {
+  if (!activeInlineCell) return;
+  if (!e.target.closest('#payments-matrix')) {
+    closeInlineEditor();
+  }
+});
+
+// SPECIAL CHARGES
+document.getElementById('sc-list').addEventListener('click',e=>{
+  const chip=e.target.closest('.sc-chip');
+  if(chip){chip.classList.toggle('paid');chip.textContent=chip.classList.contains('paid')?`✓ דירה ${chip.dataset.apt}`:`○ דירה ${chip.dataset.apt}`;return;}
+  const del=e.target.closest('.delete-sc-btn');
+  if(del){
+    const card=del.closest('.sc-card');
+    if(!confirm('למחוק?')) return;
+    fetch(`/api/admin/special/${card.dataset.scId}`,{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({adminPassword})})
+      .then(r=>r.json()).then(d=>{if(d.success){card.remove();showToast('נמחק');}});
+  }
+});
+document.getElementById('add-sc-btn').addEventListener('click',async()=>{
+  const name=document.getElementById('sc-name').value.trim();
+  if(!name){showToast('הזן שם','error');return;}
+  const r=await fetch('/api/admin/add-special',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({adminPassword,name,description:document.getElementById('sc-desc').value,
+      costPerApartment:document.getElementById('sc-cost').value,date:document.getElementById('sc-date').value})});
+  const d=await r.json();
+  if(d.success){
+    ['sc-name','sc-desc','sc-cost'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('sc-date').value='';
+    addScCard(d.charge);showToast('נוסף!');
+  }
+});
+function addScCard(sc){
+  let chips='';for(let i=1;i<=20;i++) chips+=`<div class="sc-chip" data-apt="${i}">○ דירה ${i}</div>`;
+  const div=document.createElement('div');div.className='sc-card';div.id=`sc-card-${sc.id}`;div.dataset.scId=sc.id;
+  div.innerHTML=`<div class="sc-hdr">
+    <input type="text" class="sc-name" value="${sc.name}" placeholder="שם" style="flex:2;min-width:120px;">
+    <input type="text" class="sc-desc" value="" placeholder="תיאור" style="flex:2;min-width:120px;">
+    <input type="number" class="sc-cost" value="${sc.costPerApartment}" min="0" style="width:100px;">
+    <input type="date" class="sc-date" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:0.84rem;padding:7px 10px;width:138px;">
+    <button class="btn btn-danger btn-sm delete-sc-btn">🗑</button>
+  </div>
+  <div class="text-muted text-small" style="margin-bottom:8px;">לחץ על דירה לסימון:</div>
+  <div class="sc-chips">${chips}</div>`;
+  document.getElementById('sc-list').appendChild(div);
+}
+
+// ANNOUNCEMENTS
+document.getElementById('ann-list').addEventListener('click',e=>{
+  const del=e.target.closest('.delete-ann-btn');
+  if(del){const card=del.closest('.ann-admin-card');if(confirm('למחוק הודעה?')) card.remove();}
+});
+document.getElementById('add-ann-btn').addEventListener('click',()=>{
+  const id='ann_'+Date.now();
+  const div=document.createElement('div');div.className='ann-admin-card';div.dataset.annId=id;
+  div.innerHTML=`
+    <div style="display:flex;flex-direction:column;gap:6px;align-items:center;flex-shrink:0;">
+      <input type="text" class="ann-icon-input" value="📢" style="width:48px;text-align:center;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:1.2rem;padding:6px;">
+      <label class="ios-toggle"><input type="checkbox" class="ann-active-chk" checked><span class="slider"></span></label>
+    </div>
+    <div class="ann-row">
+      <input type="text" class="ann-title-input" placeholder="כותרת">
+      <textarea class="ann-body-input" placeholder="תוכן ההודעה"></textarea>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
+      <button class="btn btn-danger btn-sm delete-ann-btn">🗑</button>
+    </div>`;
+  document.getElementById('ann-list').appendChild(div);
+});
+
+// ═══ FINANCE ══════════════════════════════════════════════════════════════
+function calcFinSummary(){
+  const opening = parseInt(document.getElementById('opening-balance-input').value) || 0;
+  const income  = txList.filter(t=>t.type==='income').reduce((s,t)=>s+(t.amount||0),0);
+  const expense = txList.filter(t=>t.type==='expense').reduce((s,t)=>s+(t.amount||0),0);
+  const balance = opening + income - expense;
+
+  document.getElementById('fin-opening').textContent  = '₪'+opening.toLocaleString();
+  document.getElementById('fin-income').textContent   = '+₪'+income.toLocaleString();
+  document.getElementById('fin-expense').textContent  = '-₪'+expense.toLocaleString();
+  const balEl = document.getElementById('fin-balance');
+  balEl.textContent = (balance>=0?'+':'') + '₪'+Math.abs(balance).toLocaleString();
+  balEl.style.color = balance>=0 ? 'var(--gold)' : 'var(--red)';
+  document.getElementById('fin-formula').textContent =
+    `יתרה = ₪${opening.toLocaleString()} (פתיחה) + ₪${income.toLocaleString()} (הכנסות) − ₪${expense.toLocaleString()} (הוצאות) = ${balance>=0?'+':''}₪${Math.abs(balance).toLocaleString()}`;
+}
+
+function renderTxRow(tx){
+  const tr=document.createElement('tr');
+  tr.dataset.txId=tx.id;
+  tr.innerHTML=`
+    <td style="color:var(--text-muted);font-size:0.8rem;white-space:nowrap;">${tx.date||'—'}</td>
+    <td><span class="badge ${tx.type==='income'?'badge-green':'badge-red'}">${tx.type==='income'?'הכנסה':'הוצאה'}</span></td>
+    <td>${tx.category||'—'}</td>
+    <td>${tx.description||'—'}</td>
+    <td class="${tx.type==='income'?'tx-income':'tx-expense'}">${tx.type==='income'?'+':'-'}₪${(tx.amount||0).toLocaleString()}</td>
+    <td><button class="btn btn-danger btn-sm delete-tx-btn" style="padding:4px 10px;">🗑</button></td>`;
+  return tr;
+}
+
+document.getElementById('opening-balance-input').addEventListener('input', calcFinSummary);
+
+document.getElementById('add-tx-btn').addEventListener('click',()=>{
+  const type   = document.getElementById('tx-type').value;
+  const cat    = document.getElementById('tx-cat').value.trim();
+  const desc   = document.getElementById('tx-desc').value.trim();
+  const amount = parseInt(document.getElementById('tx-amount').value)||0;
+  const date   = document.getElementById('tx-date').value;
+  if(!amount){ showToast('הזן סכום','error'); return; }
+  if(!desc)  { showToast('הזן תיאור','error'); return; }
+  const tx = { id:'tx_'+Date.now(), type, category:cat, description:desc, amount, date };
+  txList.push(tx);
+  // Insert sorted by date desc
+  const sorted=[...txList].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const tbody=document.getElementById('tx-body');
+  tbody.innerHTML='';
+  sorted.forEach(t=>tbody.appendChild(renderTxRow(t)));
+  calcFinSummary();
+  ['tx-cat','tx-desc','tx-amount'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('tx-date').value='';
+  showToast(`${type==='income'?'הכנסה':'הוצאה'} נוספה!`);
+});
+
+document.getElementById('tx-body').addEventListener('click',e=>{
+  const btn=e.target.closest('.delete-tx-btn');
+  if(!btn) return;
+  const row=btn.closest('tr');
+  const id=row.dataset.txId;
+  if(!confirm('למחוק פעולה זו?')) return;
+  txList=txList.filter(t=>t.id!==id);
+  row.remove();
+  calcFinSummary();
+  showToast('נמחק');
+});
+
+// SAVE ALL
+async function saveAll(){
+  const btn=document.getElementById('save-all-btn');
+  btn.disabled=true;btn.textContent='...שומר';
+
+  const np1=document.getElementById('set-new-pass').value;
+  const np2=document.getElementById('set-new-pass2').value;
+  if(np1||np2){
+    if(np1!==np2){showToast('סיסמאות אינן תואמות','error');btn.disabled=false;btn.textContent='💾 שמור הכל';return;}
+    if(np1.length<4){showToast('סיסמה קצרה מדי','error');btn.disabled=false;btn.textContent='💾 שמור הכל';return;}
+  }
+
+  // Apartments
+  const apartments=[];
+  document.querySelectorAll('.apt-grid-v2[data-apt-id]').forEach(row=>{
+    const id=parseInt(row.dataset.aptId);
+    const pv=row.querySelector('.pass-input')?row.querySelector('.pass-input').value:'';
+    apartments.push({id,
+      ownerName:  row.querySelector('.owner-input').value||'',
+      phone:      row.querySelector('.phone-input')?row.querySelector('.phone-input').value||'':'',
+      ownerType:  row.querySelector('.type-select').value||'owner',
+      tenantName: row.querySelector('.tenant-input')?row.querySelector('.tenant-input').value||'':'',
+      note:       row.querySelector('.note-input')?row.querySelector('.note-input').value||'':'',
+      password:   pv&&pv.length>=4?pv:'',
+      payments:   payments[id]||{}
+    });
+  });
+
+  // Special charges
+  const specialCharges=[];
+  document.querySelectorAll('#sc-list .sc-card').forEach(card=>{
+    const paid=[];
+    for(let i=1;i<=20;i++){
+      const chip=card.querySelector(`.sc-chip[data-apt="${i}"]`);
+      paid.push({id:i,paid:chip?chip.classList.contains('paid'):false});
+    }
+    specialCharges.push({id:card.dataset.scId,
+      name:card.querySelector('.sc-name').value||'',
+      description:card.querySelector('.sc-desc').value||'',
+      costPerApartment:parseInt(card.querySelector('.sc-cost').value)||0,
+      date:card.querySelector('.sc-date').value||'',
+      apartments:paid
+    });
+  });
+
+  // Announcements
+  const announcements=[];
+  document.querySelectorAll('#ann-list .ann-admin-card').forEach(card=>{
+    announcements.push({
+      id:card.dataset.annId||('ann_'+Date.now()),
+      title:card.querySelector('.ann-title-input').value||'',
+      body:card.querySelector('.ann-body-input').value||'',
+      icon:card.querySelector('.ann-icon-input').value||'📢',
+      active:card.querySelector('.ann-active-chk').checked
+    });
+  });
+
+  // Settings
+  const settings={
+    buildingName:        document.getElementById('set-bname').value,
+    buildingAddress:     document.getElementById('set-baddress').value,
+    monthlyFee:          document.getElementById('set-fee').value,
+    openingBalance:      parseInt(document.getElementById('opening-balance-input').value) || 0,
+    showPublicDebts:     document.getElementById('set-show-debts').checked,
+    showFinancialReport: document.getElementById('set-show-finance').checked,
+    bankDetails:{
+      bank:        document.getElementById('set-bank').value,
+      branch:      document.getElementById('set-branch').value,
+      account:     document.getElementById('set-account').value,
+      beneficiary: document.getElementById('set-beneficiary').value
+    },
+    payboxLink: document.getElementById('set-paybox').value,
+    years: serverYears
+  };
+  if(np1) settings.newAdminPassword=np1;
+
+  try{
+    const r=await fetch('/api/admin/save',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({adminPassword,apartments,specialCharges,settings,announcements,transactions:txList})});
+    const d=await r.json();
+    if(d.success){
+      if(np1) adminPassword=np1;
+      serverMonthlyFee=parseInt(document.getElementById('set-fee').value)||serverMonthlyFee;
+      showToast('✓ '+d.message);
+      document.getElementById('set-new-pass').value='';
+      document.getElementById('set-new-pass2').value='';
+      document.querySelectorAll('.pass-input').forEach(i=>i.value='');
+      updateAllAptStatuses();updateSummary();
+    } else showToast(d.message||'שגיאה','error');
+  }catch(e){showToast('שגיאת רשת','error');}
+  finally{btn.disabled=false;btn.textContent='💾 שמור הכל';}
+}
+
+// ══ TICKETS ════════════════════════════════════════════════════════════════
+async function updateTicket(ticketId, status, adminNote){
+  if(!adminPassword) return;
+  const body = { adminPassword, ticketId };
+  if(status !== null) body.status = status;
+  if(adminNote !== null) body.adminNote = adminNote;
+  try{
+    const r = await fetch('/api/admin/ticket/update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const d = await r.json();
+    if(d.success){
+      // update badge
+      const row  = document.querySelector(`.ticket-row[data-tkt-id="${ticketId}"]`);
+      if(row){
+        const badge = row.querySelector('.tkt-badge');
+        if(badge && status){
+          badge.className='tkt-badge '+status;
+          badge.textContent=status==='open'?'פתוח':status==='in-progress'?'בטיפול':'סגור';
+        }
+      }
+      showToast('עודכן!');
+    }
+  }catch(e){ showToast('שגיאה','error'); }
+}
+
+async function deleteTicket(ticketId, btn){
+  if(!confirm('למחוק קריאה זו?')) return;
+  try{
+    const r = await fetch(`/api/admin/ticket/${ticketId}`,{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({adminPassword})});
+    const d = await r.json();
+    if(d.success){ btn.closest('.ticket-row').remove(); showToast('נמחק'); }
+  }catch(e){ showToast('שגיאה','error'); }
+}
+
+// ══ POLLS ══════════════════════════════════════════════════════════════════
+document.getElementById('add-poll-opt-btn').addEventListener('click',()=>{
+  const wrap = document.getElementById('poll-options-wrap');
+  const count = wrap.querySelectorAll('.poll-opt-inp').length;
+  if(count >= 6){ showToast('מקסימום 6 אפשרויות','error'); return; }
+  const inp = document.createElement('input');
+  inp.type='text'; inp.className='poll-opt-inp';
+  inp.placeholder=`אפשרות ${count+1}`;
+  inp.style.cssText='background:var(--bg);border:1px solid var(--border-strong);border-radius:6px;color:var(--text);font-family:Heebo,sans-serif;font-size:0.88rem;padding:8px 12px;direction:rtl;';
+  wrap.appendChild(inp);
+});
+
+document.getElementById('add-poll-btn').addEventListener('click',async()=>{
+  const q = document.getElementById('poll-q').value.trim();
+  if(!q){ showToast('הזן שאלה','error'); return; }
+  const opts = [...document.querySelectorAll('.poll-opt-inp')].map(i=>i.value.trim()).filter(Boolean);
+  if(opts.length < 2){ showToast('נדרשות לפחות 2 אפשרויות','error'); return; }
+  try{
+    const r = await fetch('/api/admin/poll/add',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({adminPassword, question:q, options:opts})});
+    const d = await r.json();
+    if(d.success){
+      document.getElementById('poll-q').value='';
+      document.querySelectorAll('.poll-opt-inp').forEach((i,idx)=>{ i.value=''; if(idx>=2) i.remove(); });
+      // prepend card
+      const poll=d.poll;
+      const div=document.createElement('div');div.className='poll-admin-card';div.dataset.pollId=poll.id;
+      let optHtml=poll.options.map(o=>`<div class="poll-admin-result"><span style="min-width:100px;font-size:0.83rem;">${o}</span><div class="poll-result-bar"><div class="poll-result-fill" style="width:0%"></div></div><span style="font-size:0.78rem;color:var(--text-muted);">0 (0%)</span></div>`).join('');
+      div.innerHTML=`<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+        <div><div style="font-weight:700;">${poll.question}</div><div style="font-size:0.76rem;color:var(--text-dim);">${new Date().toLocaleDateString('he-IL')} | 0 מצביעים</div></div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-outline btn-sm toggle-poll-btn" data-poll-id="${poll.id}">⏸ השהה</button>
+          <button class="btn btn-danger btn-sm delete-poll-btn" data-poll-id="${poll.id}">🗑</button>
+        </div></div>${optHtml}
+        <div style="margin-top:6px;"><span class="badge badge-green">פעיל</span></div>`;
+      document.getElementById('polls-list').insertBefore(div, document.getElementById('polls-list').firstChild);
+      showToast('סקר נוצר!');
+    } else showToast(d.message||'שגיאה','error');
+  }catch(e){ showToast('שגיאת רשת','error'); }
+});
+
+document.getElementById('polls-list').addEventListener('click',async e=>{
+  const tog = e.target.closest('.toggle-poll-btn');
+  if(tog){
+    const pollId=tog.dataset.pollId;
+    try{
+      const r=await fetch('/api/admin/poll/toggle',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({adminPassword,pollId})});
+      const d=await r.json();
+      if(d.success){ tog.textContent=d.active?'⏸ השהה':'▶ הפעל'; showToast(d.active?'הסקר פעיל':'הסקר מושהה'); }
+    }catch(e){ showToast('שגיאה','error'); }
+    return;
+  }
+  const del = e.target.closest('.delete-poll-btn');
+  if(del){
+    if(!confirm('למחוק סקר?')) return;
+    const pollId=del.dataset.pollId;
+    try{
+      const r=await fetch(`/api/admin/poll/${pollId}`,{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({adminPassword})});
+      const d=await r.json();
+      if(d.success){ del.closest('.poll-admin-card').remove(); showToast('נמחק'); }
+    }catch(e){ showToast('שגיאה','error'); }
+  }
+});
+
+// ══ BULLETIN ══════════════════════════════════════════════════════════════
+document.querySelector('#tab-bulletin .card')?.addEventListener('click',async e=>{
+  const tog = e.target.closest('.toggle-blt-btn');
+  if(tog){
+    const itemId=tog.dataset.bltId;
+    try{
+      const r=await fetch('/api/admin/bulletin/toggle',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({adminPassword,itemId})});
+      const d=await r.json();
+      if(d.success){
+        const row=tog.closest('.bulletin-admin-row');
+        const badge=row.querySelector('.badge');
+        if(badge){ badge.className='badge '+(d.active?'badge-green':'badge-red'); badge.textContent=d.active?'פעיל':'מוסתר'; }
+        tog.textContent=d.active?'הסתר':'הצג';
+        showToast(d.active?'מוצג':'מוסתר');
+      }
+    }catch(e){ showToast('שגיאה','error'); }
+    return;
+  }
+  const del = e.target.closest('.delete-blt-btn');
+  if(del){
+    if(!confirm('למחוק מודעה?')) return;
+    const itemId=del.dataset.bltId;
+    try{
+      const r=await fetch(`/api/admin/bulletin/${itemId}`,{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({adminPassword})});
+      const d=await r.json();
+      if(d.success){ del.closest('.bulletin-admin-row').remove(); showToast('נמחק'); }
+    }catch(e){ showToast('שגיאה','error'); }
+  }
+});
+
+// ══ WA REMINDER FROM MATRIX ═══════════════════════════════════════════════
+// Right-click on debt cell → send WhatsApp reminder
+function sendWaReminder(aptId){
+  const apt = serverApartments.find(a=>a.id===aptId);
+  if(!apt || !apt.phone) return;
+  const debt = calcAptDebt(aptId);
+  if(!debt) return;
+  const raw  = apt.phone.replace(/\D/g,'').replace(/^0/,'');
+  const name = apt.ownerType==='tenant'&&apt.tenantName ? apt.tenantName : (apt.ownerName||`דירה ${aptId}`);
+  const text = encodeURIComponent(`שלום ${name},\nתזכורת לתשלום ועד בית.\nחוב נוכחי: ₪${debt.toLocaleString()}.\nתודה!`);
+  window.open(`https://wa.me/972${raw}?text=${text}`,'_blank','noopener');
+}
+
+document.getElementById('save-all-btn').addEventListener('click',saveAll);
+
+// ══ BACKUP ════════════════════════════════════════════════════════════════
+document.getElementById('backup-btn').addEventListener('click',()=>{
+  if(!adminPassword){ showToast('התחבר תחילה','error'); return; }
+  const a = document.createElement('a');
+  a.href = `/api/admin/export/${encodeURIComponent(adminPassword)}`;
+  a.download = `vaad-backup-${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  showToast('גיבוי מוריד...');
+});
+
+document.getElementById('backup-now-btn').addEventListener('click',async()=>{
+  if(!adminPassword){ showToast('התחבר תחילה','error'); return; }
+  try{
+    const r=await fetch('/api/admin/backup/now',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({adminPassword})});
+    const d=await r.json();
+    if(d.success){ showToast(d.message); loadAutoBackups(); }
+  }catch(e){ showToast('שגיאה','error'); }
+});
+
+async function loadAutoBackups(){
+  if(!adminPassword) return;
+  try{
+    const r=await fetch(`/api/admin/backups/${encodeURIComponent(adminPassword)}`);
+    const d=await r.json();
+    const el=document.getElementById('auto-backups-list');
+    if(!d.success||!d.files.length){ el.textContent='אין גיבויים אוטומטיים עדיין.'; return; }
+    el.innerHTML=d.files.map(f=>`
+      <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);">
+        <span style="flex:1;">${f.name}</span>
+        <span style="color:var(--text-dim);font-size:0.75rem;">${(f.size/1024).toFixed(1)}KB</span>
+        <a href="/api/admin/backup/download/${encodeURIComponent(adminPassword)}/${f.name}"
+           class="btn btn-outline btn-sm" style="padding:3px 10px;font-size:0.75rem;">⬇️ הורד</a>
+      </div>`).join('');
+  }catch(e){}
+}
+
+// Load backups list when settings tab is opened
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  if(btn.dataset.tab==='settings') btn.addEventListener('click', ()=>{ if(adminPassword) loadAutoBackups(); });
+});
+
+// ══ RESTORE ══════════════════════════════════════════════════════════════
+document.getElementById('restore-file').addEventListener('change', async e=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const statusEl = document.getElementById('restore-status');
+  statusEl.style.display = 'block';
+  statusEl.style.color   = 'var(--text-muted)';
+  statusEl.textContent   = '📂 קורא קובץ...';
+
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+
+    if(!data.apartments || !data.adminPassword){
+      statusEl.style.color = 'var(--red)';
+      statusEl.textContent = '❌ קובץ לא תקין — חסרים שדות חובה';
+      return;
+    }
+
+    if(!confirm(`לשחזר נתונים מ-${file.name}?\n\nפעולה זו תחליף את כל הנתונים הקיימים!`)){
+      statusEl.style.display = 'none';
+      e.target.value = '';
+      return;
+    }
+
+    statusEl.textContent = '⏳ משחזר...';
+    const r = await fetch('/api/admin/import', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ adminPassword, data })
+    });
+    const res = await r.json();
+    if(res.success){
+      statusEl.style.color = 'var(--green)';
+      statusEl.textContent = '✅ ' + res.message + ' — מרענן דף...';
+      setTimeout(()=>location.reload(), 1500);
+    } else {
+      statusEl.style.color = 'var(--red)';
+      statusEl.textContent = '❌ ' + (res.message||'שגיאה');
+    }
+  } catch(err){
+    statusEl.style.color = 'var(--red)';
+    statusEl.textContent = '❌ קובץ JSON לא תקין';
+  }
+  e.target.value = '';
+});
+document.addEventListener('keydown',e=>{
+  if((e.ctrlKey||e.metaKey)&&e.key==='s'){
+    e.preventDefault();
+    if(document.getElementById('admin-panel').classList.contains('visible')) saveAll();
+  }
+});
+</script>
+<script src="/js/a11y.js"></script>
+</body>
+</html>
